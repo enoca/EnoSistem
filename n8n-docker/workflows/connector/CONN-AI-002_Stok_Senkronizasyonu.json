@@ -1,0 +1,241 @@
+{
+  "name": "CONN-AI-002: Envanter Senkronizasyonu",
+  "nodes": [
+    {
+      "id": "cron-trigger",
+      "name": "15 Dakika Trigger",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutes": [15]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-kep-stock",
+      "name": "KEP Stok Verisi",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://kep-api.enoca.com/v1/inventory/current",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.KEP_API_KEY }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-trendyol",
+      "name": "Trendyol Stok",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 150],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.trendyol.com/integration/products",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TRENDYOL_API_KEY }}"
+            },
+            {
+              "name": "SupplierId",
+              "value": "={{ $env.TRENDYOL_SUPPLIER_ID }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-hepsiburada",
+      "name": "Hepsiburada Stok",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 450],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.hepsiburada.com/products/stock",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.HEPSIBURADA_API_KEY }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "compare-stocks",
+      "name": "Stok Karşılaştırma",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// Stok karşılaştırma ve conflict tespiti\nconst kepStock = $input.items.find(i => i.json.source === 'kep')?.json.items || [];\nconst trendyolStock = $input.items.find(i => i.json.source === 'trendyol')?.json.items || [];\nconst hepsiburadaStock = $input.items.find(i => i.json.source === 'hepsiburada')?.json.items || [];\n\n// KEP'i source of truth olarak al\nconst conflicts = [];\nconst syncRequired = [];\n\nkepStock.forEach(kepItem => {\n  const sku = kepItem.sku;\n  \n  // Trendyol kontrolü\n  const trendyolItem = trendyolStock.find(t => t.sku === sku);\n  if (trendyolItem) {\n    const diff = Math.abs(kepItem.quantity - trendyolItem.quantity);\n    const diffPercent = (diff / kepItem.quantity) * 100;\n    \n    if (diff > 0) {\n      if (diffPercent > 20) {\n        conflicts.push({\n          sku,\n          productName: kepItem.name,\n          source: 'KEP',\n          platform: 'Trendyol',\n          kepStock: kepItem.quantity,\n          platformStock: trendyolItem.quantity,\n          difference: diff,\n          diffPercent: Math.round(diffPercent),\n          severity: diffPercent > 50 ? 'HIGH' : 'MEDIUM',\n          action: 'INVESTIGATE'\n        });\n      } else {\n        syncRequired.push({\n          sku,\n          source: 'KEP',\n          target: 'Trendyol',\n          quantity: kepItem.quantity,\n          action: 'UPDATE'\n        });\n      }\n    }\n  }\n  \n  // Hepsiburada kontrolü\n  const hepsiburadaItem = hepsiburadaStock.find(h => h.sku === sku);\n  if (hepsiburadaItem) {\n    const diff = Math.abs(kepItem.quantity - hepsiburadaItem.quantity);\n    if (diff > 0) {\n      syncRequired.push({\n        sku,\n        source: 'KEP',\n        target: 'Hepsiburada',\n        quantity: Math.min(kepItem.quantity, hepsiburadaItem.quantity), // Minimum alsın\n        action: diff > 10 ? 'CONFLICT' : 'UPDATE'\n      });\n    }\n  }\n});\n\nreturn [{\n  json: {\n    conflicts: conflicts,\n    syncRequired: syncRequired,\n    summary: {\n      totalProducts: kepStock.length,\n      conflictsFound: conflicts.length,\n      syncNeeded: syncRequired.length\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "conflict-router",
+      "name": "Conflict Yönlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [850, 300],
+      "parameters": {
+        "dataType": "string",
+        "valueComparison": "=",
+        "fallbackOutput": "sync",
+        "rules": {
+          "rules": [
+            {
+              "name": "Conflict Var",
+              "value": "INVESTIGATE",
+              "output": "conflict"
+            },
+            {
+              "name": "Senkronizasyon Gerekli",
+              "value": "UPDATE",
+              "output": "sync"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "conflict-alert",
+      "name": "Conflict Bildirimi",
+      "type": "n8n-nodes-base.slack",
+      "position": [1050, 200],
+      "parameters": {
+        "channel": "=#inventory-sync",
+        "text": "=⚠️ *STOK UYUŞMAZLIĞI TESPİT*\n\n*SKU:* {{ $json.sku }}\n*Ürün:* {{ $json.productName }}\n*KEP Stok:* {{ $json.kepStock }}\n*{{ $json.platform }} Stok:* {{ $json.platformStock }}\n*Fark:* %{{ $json.diffPercent }}\n\nİnceleme gerekiyor.",
+        "options": {}
+      }
+    },
+    {
+      "id": "resolve-kep-source",
+      "name": "KEP Kaynaklı Güncelle",
+      "type": "n8n-nodes-base.code",
+      "position": [1250, 100],
+      "parameters": {
+        "jsCode": "// KEP'i source of truth olarak platformu güncelle\nconst sync = $input.first().json;\n\nreturn [{\n  json: {\n    sku: sync.sku,\n    quantity: sync.quantity,\n    updateSource: 'KEP',\n    updatedAt: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "update-trendyol",
+      "name": "Trendyol Güncelle",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1450, 100],
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.trendyol.com/integration/products/{{ $json.sku }}/stock",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TRENDYOL_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "quantity",
+              "value": "={{ $json.quantity }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "update-hepsiburada",
+      "name": "Hepsiburada Güncelle",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1450, 300],
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.hepsiburada.com/products/{{ $json.sku }}/stock",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.HEPSIBURADA_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "quantity",
+              "value": "={{ $json.quantity }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1650, 300],
+      "parameters": {
+        "jsCode": "console.log('Stok senkronizasyonu tamamlandı:', new Date().toISOString());\nreturn [{ json: { status: 'completed' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "15 Dakika Trigger": { "output": [["KEP Stok Verisi", "main"], ["Trendyol Stok", "main"], ["Hepsiburada Stok", "main"]] },
+    "KEP Stok Verisi": { "output": [["Stok Karşılaştırma", "main"]] },
+    "Trendyol Stok": { "output": [["Stok Karşılaştırma", "main"]] },
+    "Hepsiburada Stok": { "output": [["Stok Karşılaştırma", "main"]] },
+    "Stok Karşılaştırma": { "output": [["Conflict Yönlendirme", "main"]] },
+    "Conflict Yönlendirme": {
+      "output": {
+        "conflict": [["Conflict Bildirimi", "main"], ["KEP Kaynaklı Güncelle", "main"]],
+        "sync": [["KEP Kaynaklı Güncelle", "main"]]
+      }
+    },
+    "Conflict Bildirimi": { "output": [["KEP Kaynaklı Güncelle", "main"]] },
+    "KEP Kaynaklı Güncelle": {
+      "output": [["Trendyol Güncelle", "main"], ["Hepsiburada Güncelle", "main"]]
+    },
+    "Trendyol Güncelle": { "output": [["Tamamlandı", "main"]] },
+    "Hepsiburada Güncelle": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["connector", "stok", "senkronizasyon", "envanter", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "conn-ai-002-inventory-sync"
+  }
+}

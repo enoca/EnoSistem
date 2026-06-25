@@ -1,0 +1,206 @@
+{
+  "name": "KEP-AI-003: Stok Uyarı ve Restok",
+  "nodes": [
+    {
+      "id": "cron-trigger",
+      "name": "Stok Kontrol Trigger",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hours": [6, 12, 18],
+              "minutes": [0]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-stock",
+      "name": "Stok Verisi Çek",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://kep-api.enoca.com/v1/inventory?threshold=20",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.KEP_API_KEY }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "analyze-stock",
+      "name": "Stok Analizi",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// Stok seviyesi analizi\nconst inventory = $input.first().json.items || [$input.first().json];\n\nconst today = new Date();\nconst result = inventory.map(item => {\n  const stockLevel = item.quantity || 0;\n  const maxStock = item.maxStock || 100;\n  const percentage = (stockLevel / maxStock) * 100;\n  \n  let status = 'NORMAL';\n  let priority = 'LOW';\n  \n  if (percentage < 10) {\n    status = 'CRITICAL';\n    priority = 'CRITICAL';\n  } else if (percentage < 20) {\n    status = 'URGENT';\n    priority = 'HIGH';\n  } else if (percentage < 50) {\n    status = 'WARNING';\n    priority = 'MEDIUM';\n  }\n  \n  return {\n    json: {\n      productId: item.productId || item.id,\n      productName: item.name || item.productName,\n      sku: item.sku,\n      currentStock: stockLevel,\n      maxStock,\n      percentage: Math.round(percentage),\n      status,\n      priority,\n      lastRestock: item.lastRestockDate,\n      avgDailySales: item.avgDailySales || 10,\n      daysUntilStockout: item.avgDailySales > 0 ? Math.floor(stockLevel / item.avgDailySales) : 999\n    }\n  };\n});\n\n// Kritik ve uyarı olanları filtrele\nconst criticalItems = result.filter(r => r.json.priority === 'CRITICAL' || r.json.priority === 'HIGH');\n\nreturn criticalItems.length > 0 ? criticalItems : [{ json: { message: 'No critical stock issues', items: result.map(r => r.json) } }];"
+      }
+    },
+    {
+      "id": "ai-reorder",
+      "name": "AI Restok Önerisi",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [850, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen bir tedarik zinciri uzmanısın. Stok verilerini analiz ederek optimal sipariş miktarları ve tedarikçi önerileri sunarsın.",
+        "prompt": "Şu stok durumlarını analiz et ve restok önerisi yap:\n\n{{ $json }}\n\nHer ürün için:\n1. Optimal sipariş miktarı\n2. Tahmini teslimat süresi\n3. Aciliyet seviyesi\n4. Önerilen tedarikçi\n\nJSON formatında dön.",
+        "options": {
+          "maxTokens": 600,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "stock-router",
+      "name": "Stok Durumu Yönlendir",
+      "type": "n8n-nodes-base.switch",
+      "position": [1050, 300],
+      "parameters": {
+        "dataType": "string",
+        "valueComparison": "=",
+        "fallbackOutput": "default",
+        "rules": {
+          "rules": [
+            {
+              "name": "Kritik",
+              "value": "CRITICAL",
+              "output": "critical"
+            },
+            {
+              "name": "Acil",
+              "value": "URGENT",
+              "output": "urgent"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "critical-alert",
+      "name": "Kritik Bildirim",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 150],
+      "parameters": {
+        "channel": "=#inventory-alerts",
+        "text": "=🚨 *KRİTİK STOK UYARISI*\n\n*Ürün:* {{ $json.productName }}\n*SKU:* {{ $json.sku }}\n*Mevcut Stok:* {{ $json.currentStock }} adet ({{ $json.percentage }}%)\n*Durumu:* {{ $json.daysUntilStockout }} gün içinde tükenebilir\n\n⚡ Acil sipariş gerekli!",
+        "options": {}
+      }
+    },
+    {
+      "id": "urgent-alert",
+      "name": "Acil Bildirim",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 300],
+      "parameters": {
+        "channel": "=#inventory-alerts",
+        "text": "=⚠️ *STOK UYARISI*\n\n*Ürün:* {{ $json.productName }}\n*SKU:* {{ $json.sku }}\n*Mevcut Stok:* {{ $json.currentStock }} adet ({{ $json.percentage }}%)\n\n📦 24 saat içinde restok planlanmalı.",
+        "options": {}
+      }
+    },
+    {
+      "id": "auto-purchase",
+      "name": "Otomatik Satın Alma",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 150],
+      "parameters": {
+        "jsCode": "// Otomatik satın alma talebi oluştur\nconst item = $input.first().json;\n\n// Optimal sipariş miktarı hesapla (basit EOQ)\nconst annualDemand = item.avgDailySales * 365;\nconst orderingCost = 500; // TL\nconst holdingCostRate = 0.25;\nconst unitCost = item.unitCost || 100;\n\nconst eoq = Math.sqrt((2 * annualDemand * orderingCost) / (unitCost * holdingCostRate));\nconst orderQuantity = Math.min(Math.round(eoq), item.maxStock - item.currentStock);\n\nreturn [{\n  json: {\n    productId: item.productId,\n    productName: item.productName,\n    currentStock: item.currentStock,\n    orderQuantity,\n    estimatedCost: orderQuantity * unitCost,\n    supplier: item.preferredSupplier || 'DEFAULT',\n    urgency: item.priority,\n    requestedAt: new Date().toISOString(),\n    status: 'PENDING_APPROVAL'\n  }\n}];"
+      }
+    },
+    {
+      "id": "create-purchase-order",
+      "name": "Satın Alma Oluştur",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1650, 150],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://kep-api.enoca.com/v1/purchase-orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.KEP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "productId",
+              "value": "={{ $json.productId }}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{ $json.orderQuantity }}"
+            },
+            {
+              "name": "supplier",
+              "value": "={{ $json.supplier }}"
+            },
+            {
+              "name": "urgency",
+              "value": "={{ $json.urgency }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1850, 300],
+      "parameters": {
+        "jsCode": "console.log('Stok kontrol ve restok işlemi tamamlandı:', new Date().toISOString());\nreturn [{ json: { status: 'completed' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Stok Kontrol Trigger": { "output": [["Stok Verisi Çek", "main"]] },
+    "Stok Verisi Çek": { "output": [["Stok Analizi", "main"]] },
+    "Stok Analizi": { "output": [["AI Restok Önerisi", "main"]] },
+    "AI Restok Önerisi": { "output": [["Stok Durumu Yönlendir", "main"]] },
+    "Stok Durumu Yönlendir": {
+      "output": {
+        "critical": [["Kritik Bildirim", "main"], ["Otomatik Satın Alma", "main"]],
+        "urgent": [["Acil Bildirim", "main"]],
+        "default": [["Tamamlandı", "main"]]
+      }
+    },
+    "Kritik Bildirim": { "output": [["Otomatik Satın Alma", "main"]] },
+    "Acil Bildirim": { "output": [["Tamamlandı", "main"]] },
+    "Otomatik Satın Alma": { "output": [["Satın Alma Oluştur", "main"]] },
+    "Satın Alma Oluştur": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["kep", "stok", "envanter", "restok", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "kep-ai-003-stock-monitoring"
+  }
+}

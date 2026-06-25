@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>enoca™ Connector | Kurumsal Entegrasyon Konektörü</title>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --secondary: #2c5282;
+            --accent: #38b2ac;
+            --background: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-light: #718096;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --error: #e53e3e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .hero .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .badge-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--accent);
+            display: inline-block;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.25rem;
+        }
+
+        .card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* Architecture Diagram */
+        .architecture {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .arch-layer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .arch-box {
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .arch-layer-1 { background: #e6fffa; color: #234e52; border: 2px solid var(--accent); }
+        .arch-layer-2 { background: #ebf8ff; color: #2a4365; border: 2px solid #4299e1; }
+        .arch-layer-3 { background: #faf5ff; color: #44337a; border: 2px solid #9f7aea; }
+        .arch-layer-4 { background: #fffaf0; color: #744210; border: 2px solid #ed8936; }
+        .arch-layer-5 { background: #fff5f5; color: #822727; border: 2px solid #fc8181; }
+
+        .arch-connector {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        /* Modules Table */
+        .modules-table {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 50px;
+        }
+
+        .modules-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .modules-table th {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .modules-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modules-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .modules-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .phase-badge {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .phase-mvp { background: #c6f6d5; color: #22543d; }
+        .phase-faz1 { background: #bee3f8; color: #2a4365; }
+
+        /* Flow Diagram */
+        .flow-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 20px 0;
+        }
+
+        .flow-step {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .flow-arrow {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        /* Protocols */
+        .protocols-grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 50px;
+        }
+
+        .protocol-item {
+            background: var(--card-bg);
+            padding: 25px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .protocol-item h4 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--primary);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .hero .subtitle { font-size: 1.1rem; }
+            .arch-box { min-width: 120px; padding: 10px 15px; font-size: 0.85rem; }
+            .flow-step { padding: 10px 15px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>enoca™ Connector</h1>
+        <p class="subtitle">Kurumsal Entegrasyon Konektörü</p>
+        <div class="badge-container">
+            <span class="badge">V3R1</span>
+            <span class="badge">24 Haziran 2026</span>
+            <span class="badge">Canlıya Geçiş Hazır</span>
+            <span class="badge">ERP • E-Ticaret • CRM • WMS</span>
+        </div>
+    </section>
+
+    <div class="container">
+
+        <!-- Proje Hakkında -->
+        <section>
+            <h2 class="section-title">Proje Hakkında</h2>
+            <div class="card" style="max-width: 900px; margin: 0 auto 50px;">
+                <p style="font-size: 1.1rem; line-height: 1.8;">
+                    Kurumsal firmaların kullandığı <strong>ERP, e-Ticaret, CRM, WMS, Fiyatlandırma Motorları</strong> gibi
+                    farklı sistemlerin birbiriyle <strong>güvenli, performanslı ve şeffaf</strong> şekilde haberleşmesini
+                    sağlayan kurumsal entegrasyon platformu. JSON tabanlı standart şablonlarla veri dönüştürme,
+                    WebSocket ve Apache Kafka ile gerçek zamanlı veri akışı, mikro saniye seviyesinde loglama
+                    ile gelişmiş izlenebilirlik sunar.
+                </p>
+            </div>
+        </section>
+
+        <!-- Mimari Yapı -->
+        <section>
+            <h2 class="section-title">Mimari Yapı</h2>
+            <div class="architecture">
+                <div class="arch-layer">
+                    <div class="arch-box arch-layer-1">React Dashboard</div>
+                </div>
+                <div class="arch-connector">▼</div>
+                <div class="arch-layer">
+                    <div class="arch-box arch-layer-2">REST API</div>
+                    <div class="arch-box arch-layer-2">SOAP (XML)</div>
+                    <div class="arch-box arch-layer-2">GraphQL</div>
+                    <div class="arch-box arch-layer-2">SFTP</div>
+                    <div class="arch-box arch-layer-2">SAP RFC</div>
+                </div>
+                <div class="arch-connector">▼</div>
+                <div class="arch-layer">
+                    <div class="arch-box arch-layer-3">Apache Kafka (Event-Driven)</div>
+                </div>
+                <div class="arch-connector">▼</div>
+                <div class="arch-layer">
+                    <div class="arch-box arch-layer-4">Redis Cache</div>
+                    <div class="arch-box arch-layer-4">PostgreSQL</div>
+                    <div class="arch-box arch-layer-4">Elasticsearch</div>
+                </div>
+                <div class="arch-connector">▼</div>
+                <div class="arch-layer">
+                    <div class="arch-box arch-layer-5">Keycloak IAM (Güvenlik)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Desteklenen Protokoller -->
+        <section>
+            <h2 class="section-title">Desteklenen Protokoller</h2>
+            <div class="protocols-grid">
+                <div class="protocol-item">
+                    <div style="font-size: 2rem;">🌐</div>
+                    <h4>REST API</h4>
+                </div>
+                <div class="protocol-item">
+                    <div style="font-size: 2rem;">📄</div>
+                    <h4>SOAP (XML)</h4>
+                </div>
+                <div class="protocol-item">
+                    <div style="font-size: 2rem;">🔗</div>
+                    <h4>GraphQL</h4>
+                </div>
+                <div class="protocol-item">
+                    <div style="font-size: 2rem;">📁</div>
+                    <h4>SFTP</h4>
+                </div>
+                <div class="protocol-item">
+                    <div style="font-size: 2rem;">⚙️</div>
+                    <h4>SAP RFC</h4>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hedef Metrikler -->
+        <section>
+            <h2 class="section-title">Hedef Metrikler</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value">%60</div>
+                    <div class="metric-label">Maliyet Azaltımı</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">< 10s</div>
+                    <div class="metric-label">Stok Güncellemesi</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">< 3s</div>
+                    <div class="metric-label">Sipariş Aktarımı</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">0</div>
+                    <div class="metric-label">Veri Kaybı (DLT)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modüller -->
+        <section>
+            <h2 class="section-title">Modül Yapısı (13 Modül)</h2>
+            <div class="modules-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Modül Adı</th>
+                            <th>Açıklama</th>
+                            <th>Faz</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><strong>Dashboard</strong></td>
+                            <td>Entegrasyon sağlığı anlık izleme</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><strong>Demo & Webhook Simülatörü</strong></td>
+                            <td>Test webhook istekleri</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><strong>Uç Noktalar (Endpoints)</strong></td>
+                            <td>Kaynak/hedef sistem bağlantı tanımları</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td><strong>Entegrasyon Akışları</strong></td>
+                            <td>Veri transfer rotaları ve orkestrasyon</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td><strong>Varyant Eşleme</strong></td>
+                            <td>SKU → Product Group mapping</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td><strong>Veri Aktarım Kayıtları</strong></td>
+                            <td>Tüm transferlerin loglanması</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td><strong>Bağlantı Kayıtları</strong></td>
+                            <td>HTTP istek/yanıt detay logları</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td><strong>DLT (Dead Letter Queue)</strong></td>
+                            <td>Hata yönetimi ve yeniden deneme</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td><strong>Kafka Yönetimi</strong></td>
+                            <td>Cluster izleme, brokers, topics</td>
+                            <td><span class="phase-badge phase-faz1">Faz 1</span></td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td><strong>Excel İçe/Dışa Aktarım</strong></td>
+                            <td>Toplu ürün/stok yükleme</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td><strong>Kullanıcı Yönetimi</strong></td>
+                            <td>Keycloak SSO, rol bazlı erişim</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td><strong>Sistem Ayarları</strong></td>
+                            <td>Bakım modu, genel parametreler</td>
+                            <td><span class="phase-badge phase-mvp">MVP</span></td>
+                        </tr>
+                        <tr>
+                            <td>13</td>
+                            <td><strong>Observability</strong></td>
+                            <td>Prometheus/Grafana metrikleri</td>
+                            <td><span class="phase-badge phase-faz1">Faz 1</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Referans İş Süreçleri -->
+        <section>
+            <h2 class="section-title">Referans İş Süreçleri</h2>
+
+            <div class="flow-section">
+                <h3 style="color: var(--primary); margin-bottom: 20px;">1. ERP → E-Ticaret Ürün Senkronizasyonu</h3>
+                <div class="flow-diagram">
+                    <div class="flow-step">ERP Event</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Webhook</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Validasyon</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Mapping Engine</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Redis Cache</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">E-Ticaret API</div>
+                </div>
+                <p style="text-align: center; color: var(--text-light); margin-top: 15px;">
+                    Hata durumunda: Retry (3 deneme, exp. backoff) / DLT
+                </p>
+            </div>
+
+            <div class="flow-section">
+                <h3 style="color: var(--primary); margin-bottom: 20px;">2. Webhook Tabanlı Sipariş Aktarımı</h3>
+                <div class="flow-diagram">
+                    <div class="flow-step">E-Ticaret Checkout</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">SHA-256 Doğrulama</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Kafka</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">ERP BAPI</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Sipariş Belgesi</div>
+                </div>
+            </div>
+
+            <div class="flow-section">
+                <h3 style="color: var(--primary); margin-bottom: 20px;">3. Uçtan Uca İade (RMA) Akışı</h3>
+                <div class="flow-diagram">
+                    <div class="flow-step">Müşteri İade Talebi</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Depo Kontrol</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Kargo Kodu</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Refund API</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">ERP İade Faturası</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Yenilikçi Yönler -->
+        <section>
+            <h2 class="section-title">Yenilikçi Yönler</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">🔌</div>
+                    <h3>Sistem-Agnostik Mimari</h3>
+                    <p>SAP, Odoo, KEP, Enoprice, Smart arasında kullanılabilir</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📦</div>
+                    <h3>Varyant Gruplama Algoritması</h3>
+                    <p>İlk 8 karakter eşleşmesiyle otomatik SKU gruplama</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔄</div>
+                    <h3>Exponential Backoff Retry</h3>
+                    <p>3 deneme, 2000ms başlangıç, 2x artış</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚠️</div>
+                    <h3>Dead Letter Queue Yönetimi</h3>
+                    <p>Görsel arayüzden tek tıkla yeniden işleme</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🌍</div>
+                    <h3>Multi-Country Motoru</h3>
+                    <p>Tek panelden mağaza bazlı kargo/vergi/ödeme</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔒</div>
+                    <h3>TLS 1.3 & Keycloak IAM</h3>
+                    <p>Enterprise-grade güvenlik ve rol bazlı erişim</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- AS-IS / TO-BE -->
+        <section>
+            <h2 class="section-title">AS-IS / TO-BE Fark Analizi</h2>
+            <div class="cards-grid">
+                <div class="card" style="border-left: 4px solid var(--error);">
+                    <h3 style="color: var(--error);">AS-IS (Mevcut)</h3>
+                    <ul style="color: var(--text-light); margin-top: 15px; padding-left: 20px;">
+                        <li>Batch/statik veri aktarımı</li>
+                        <li>Manuel varyant eşleştirme</li>
+                        <li>Elle kargo barkod girişi</li>
+                        <li>Hatalı kayıtlar kayboluyor</li>
+                        <li>Performans izlenemiyor</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-left: 4px solid var(--success);">
+                    <h3 style="color: var(--success);">TO-BE (Hedef)</h3>
+                    <ul style="color: var(--text-light); margin-top: 15px; padding-left: 20px;">
+                        <li>Gerçek zamanlı event-driven sync</li>
+                        <li>Otomatik Variant Mapping</li>
+                        <li>Otomatik kargo API entegrasyonu</li>
+                        <li>DLT ile sıfır veri kaybı</li>
+                        <li>Milisaniye bazlı dashboard</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hedef Kullanıcı Grupları -->
+        <section>
+            <h2 class="section-title">Hedef Kullanıcı Grupları</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">👑</div>
+                    <h3>Global Admin</h3>
+                    <p>Tam sistem erişimi</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Operasyon Yöneticisi</h3>
+                    <p>Akış, varyant, DLT yönetimi</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🚚</div>
+                    <h3>Lojistik/Depo</h3>
+                    <p>Excel yükleme, kargo takip</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚙️</div>
+                    <h3>Entegrasyon Kullanıcısı</h3>
+                    <p>API erişimi (system-to-system)</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>enoca™ Connector</strong> | Kurumsal Entegrasyon Konektörü</p>
+        <p>V3R1 • 24 Haziran 2026 • enoca™ Analiz, Mimari ve Teknik Yazım Ekipleri</p>
+    </footer>
+
+</body>
+</html>

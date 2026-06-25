@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENOCA KEP — Kurumsal E-Ticaret Platformu | Proje Özeti</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#11182e; --card:#161f3a; --card2:#1b2747;
+    --ink:#eaf0ff; --mut:#9fb0d4; --line:#27345c;
+    --acc:#4f8cff; --acc2:#27d3a2; --acc3:#ffb547; --acc4:#ff6b8a; --acc5:#a78bfa;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 700px at 80% -10%,#1a2750 0,var(--bg) 55%) fixed,var(--bg);
+    color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--acc);text-decoration:none}
+  .wrap{display:grid;grid-template-columns:260px 1fr;max-width:1500px;margin:0 auto;gap:0}
+  nav{position:sticky;top:0;height:100vh;overflow:auto;padding:26px 18px;border-right:1px solid var(--line);
+    background:linear-gradient(180deg,var(--bg2),transparent)}
+  nav .brand{font-weight:800;font-size:1.15rem;letter-spacing:.5px}
+  nav .brand small{display:block;color:var(--mut);font-weight:500;font-size:.72rem;margin-top:4px}
+  nav a{display:block;color:var(--mut);padding:7px 12px;border-radius:9px;font-size:.88rem;margin:2px 0}
+  nav a:hover{background:var(--card);color:var(--ink)}
+  nav .grp{margin:18px 0 6px;font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:#6c7ba6}
+  main{padding:40px clamp(20px,4vw,60px) 80px;min-width:0}
+  header.hero{padding:48px 0 30px;border-bottom:1px solid var(--line);margin-bottom:34px}
+  .kicker{display:inline-block;background:var(--card2);color:var(--acc2);padding:5px 14px;border-radius:999px;
+    font-size:.74rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+  h1{font-size:clamp(1.9rem,4vw,3rem);line-height:1.12;margin:18px 0 10px;font-weight:800}
+  h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{font-size:1.12rem;color:var(--mut);max-width:760px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .pill{background:var(--card);border:1px solid var(--line);padding:7px 14px;border-radius:999px;font-size:.82rem;color:var(--ink)}
+  .pill b{color:var(--acc3)}
+  section{margin:46px 0;scroll-margin-top:20px}
+  h2{font-size:1.55rem;margin:0 0 6px;display:flex;align-items:center;gap:12px}
+  h2 .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--card2);
+    color:var(--acc);font-size:.95rem;font-weight:800;border:1px solid var(--line)}
+  .sub{color:var(--mut);margin:0 0 20px;font-size:.98rem}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;
+    padding:20px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 8px;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+  .card p{margin:0;color:var(--mut);font-size:.9rem}
+  .ic{font-size:1.2rem}
+  ul.clean{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:.9rem}
+  ul.clean li{margin:4px 0}
+  .tag{display:inline-block;font-size:.7rem;padding:3px 9px;border-radius:999px;background:#0e1730;border:1px solid var(--line);color:var(--mut);margin:3px 4px 0 0}
+  .tag.b{color:var(--acc)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .stat{text-align:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 12px}
+  .stat .v{font-size:2rem;font-weight:800;background:linear-gradient(90deg,var(--acc2),var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .l{color:var(--mut);font-size:.82rem;margin-top:4px}
+  .mod{position:relative;overflow:hidden}
+  .mod::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--acc)}
+  .mod.c2::before{background:var(--acc2)} .mod.c3::before{background:var(--acc3)}
+  .mod.c4::before{background:var(--acc4)} .mod.c5::before{background:var(--acc5)}
+  .mod .num{font-size:.72rem;color:var(--mut);font-weight:700}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:16px 18px;font-size:.86rem}
+  .flow .step{background:#0e1730;border:1px solid var(--line);padding:6px 12px;border-radius:9px;white-space:nowrap}
+  .flow .arr{color:var(--acc2);font-weight:800}
+  .layer{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:10px 0;
+    border-left:4px solid var(--acc)}
+  .layer h4{margin:0 0 6px;font-size:1rem}
+  .layer.l2{border-left-color:var(--acc5)}
+  .layer.l3{border-left-color:var(--acc2)} .layer.l4{border-left-color:var(--acc3)} .layer.l5{border-left-color:var(--acc4)}
+  .panel{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+  .panel .top{padding:16px 20px;font-weight:800;font-size:1.05rem;display:flex;justify-content:space-between;align-items:center}
+  .panel.admin .top{background:linear-gradient(90deg,rgba(79,140,255,.18),transparent)}
+  .panel.seller .top{background:linear-gradient(90deg,rgba(39,211,162,.18),transparent)}
+  .panel.client .top{background:linear-gradient(90deg,rgba(255,181,71,.18),transparent)}
+  .panel .body{padding:6px 20px 18px}
+  .panel ul{margin:8px 0;padding-left:18px;color:var(--mut);font-size:.9rem}
+  .panel code{background:#0e1730;padding:2px 7px;border-radius:6px;font-size:.78rem;color:var(--acc2)}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;background:var(--card);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  th{background:#0e1730;color:var(--ink);font-size:.78rem;text-transform:uppercase;letter-spacing:.6px}
+  td{color:var(--mut)} tr:last-child td{border-bottom:none}
+  .note{background:linear-gradient(180deg,rgba(255,181,71,.08),transparent);border:1px solid var(--line);
+    border-left:4px solid var(--acc3);border-radius:12px;padding:14px 18px;font-size:.9rem;color:var(--mut)}
+  .note b{color:var(--acc3)}
+  .timeline{position:relative;padding-left:28px}
+  .timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .tl{position:relative;margin:0 0 16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .tl::before{content:"";position:absolute;left:-24px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--acc2);border:3px solid var(--bg)}
+  .tl h4{margin:0 0 4px;font-size:.98rem} .tl p{margin:0;color:var(--mut);font-size:.86rem}
+  footer{border-top:1px solid var(--line);margin-top:50px;padding-top:24px;color:var(--mut);font-size:.84rem}
+  @media(max-width:960px){
+    .wrap{grid-template-columns:1fr} nav{display:none}
+    .g2,.g3,.g4,.stats{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:560px){.g2,.g3,.g4,.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="brand">enoca™ KEP<small>Kurumsal E-Ticaret Platformu</small></div>
+    <div class="grp">Genel</div>
+    <a href="#amac">Amaç &amp; Problem</a>
+    <a href="#kapsam">Kapsam</a>
+    <div class="grp">Teknik</div>
+    <a href="#mimari">Çözüm Mimarisi</a>
+    <a href="#moduller">14 Modül</a>
+    <a href="#entegrasyon">Entegrasyon Hub</a>
+    <a href="#veri">Veri Yönetimi</a>
+    <a href="#guvenlik">Performans &amp; Güvenlik</a>
+    <div class="grp">Ürün &amp; Süreç</div>
+    <a href="#paneller">Demo Panelleri</a>
+    <a href="#akislar">Süreç Akışları</a>
+    <a href="#metodoloji">Metodoloji</a>
+    <a href="#argeyenilik">Ar-Ge &amp; Yenilik</a>
+    <a href="#kaynaklar">Kaynak Dosyalar</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="kicker">Proje Kodu · ENOCA-KEP</span>
+      <h1>Enoca Kurumsal<br><span>E-Ticaret Platformu</span></h1>
+      <p class="lead">Çoklu ERP sistemleriyle (SAP, Oracle, Dynamics, Logo, NetSuite) entegre çalışabilen;
+        modüler, ölçeklenebilir, AI destekli ve düşük sahip olma maliyetli (TCO) <b>yerli ve milli</b> bir
+        omnichannel e-ticaret altyapısı. SAP Commerce Cloud gibi pahalı kurumsal çözümlere rekabetçi bir alternatif.</p>
+      <div class="meta">
+        <span class="pill">Hedef pazar: <b>Türkiye · Avrupa · MENA</b></span>
+        <span class="pill">Mimari: <b>Modüler Monolith</b></span>
+        <span class="pill">Yaklaşım: <b>API-First · Event-Driven</b></span>
+        <span class="pill">Geliştirici: <b>enoca</b></span>
+      </div>
+    </header>
+
+    <section>
+      <div class="stats">
+        <div class="stat"><div class="v">14</div><div class="l">Fonksiyonel Modül</div></div>
+        <div class="stat"><div class="v">3</div><div class="l">Kullanıcı Paneli (Demo)</div></div>
+        <div class="stat"><div class="v">5+</div><div class="l">Desteklenen ERP</div></div>
+        <div class="stat"><div class="v">9</div><div class="l">Use-Case Senaryosu</div></div>
+      </div>
+    </section>
+
+    <section id="amac">
+      <h2><span class="n">1</span> Amaç &amp; Çözülen Problem</h2>
+      <p class="sub">Kurumsal e-ticarette pazar boşluğu: pahalı yabancı platformlar ile yetersiz açık kaynak çözümler arasında bir orta nokta.</p>
+      <div class="grid g2">
+        <div class="card">
+          <h3><span class="ic">⚠️</span> Mevcut Durum Problemleri</h3>
+          <ul class="clean">
+            <li>SAP/ERP lisans, bakım ve entegrasyon maliyetlerinin yüksekliği ve döviz bazlı oluşu</li>
+            <li>SAP Commerce Cloud’un uzun devreye alma süresi ve uzman bağımlılığı</li>
+            <li>Açık kaynak çözümlerin kurumsal ölçek, yüksek trafik ve çoklu ülke senaryolarında yetersizliği</li>
+            <li>Omnichannel’da parçalı yapı: web, POS, marketplace, mobil, CMS’in ayrı çalışması → veri tutarsızlığı</li>
+            <li>AI/kişiselleştirme eksikliği ve standart olmayan entegrasyonlar</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="ic">🎯</span> Hedeflenen Çıktılar</h3>
+          <ul class="clean">
+            <li>Çoklu ERP ile uyumlu, globalde rekabetçi platform</li>
+            <li>SAP müşterilerine <b>düşük TCO</b>’lu maliyet avantajı</li>
+            <li>Çoklu dil / para birimi / vergi / KVKK-GDPR ile Avrupa &amp; MENA uyumu</li>
+            <li>Yüksek performanslı, ölçeklenebilen modüler mimari</li>
+            <li>Pazaryeri + POS + Mobil + Web’i birleştiren omnichannel deneyim</li>
+            <li>AI destekli kişiselleştirme, arama ve kampanya ile gelir artışı</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="kapsam">
+      <h2><span class="n">2</span> Kapsam</h2>
+      <p class="sub">Fonksiyonel kapsam (ne yapacak), fonksiyonel olmayan kalite kriterleri (nasıl olacak) ve kapsam dışı sınırlar.</p>
+      <div class="grid g3">
+        <div class="card">
+          <h3><span class="ic">🧩</span> Fonksiyonel</h3>
+          <span class="tag b">Ürün &amp; Katalog</span><span class="tag b">Sipariş (OMS-Lite)</span>
+          <span class="tag b">Sepet &amp; Checkout</span><span class="tag b">Kampanya</span>
+          <span class="tag b">CMS</span><span class="tag b">AI Öneri</span>
+          <span class="tag b">Müşteri</span><span class="tag b">Lojistik</span>
+          <span class="tag b">RMA / İade</span><span class="tag b">Ödeme</span>
+          <span class="tag b">Çoklu Ülke</span><span class="tag b">Yetki / Rol</span>
+          <span class="tag b">Backoffice</span><span class="tag b">Pazaryeri (ops.)</span>
+        </div>
+        <div class="card">
+          <h3><span class="ic">⚙️</span> Fonksiyonel Olmayan (Kalite)</h3>
+          <ul class="clean">
+            <li>Mimari sürdürülebilirlik &amp; genişletilebilirlik</li>
+            <li>Entegrasyon yönetilebilirliği (retry, versiyonlama, log)</li>
+            <li>Veri tutarlılığı &amp; senkronizasyon kalitesi (MDG)</li>
+            <li>Güvenlik, performans, KVKK/GDPR uyumu</li>
+            <li>DevOps uygunluğu (CI/CD, container, observability)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="ic">🚫</span> Kapsam Dışı</h3>
+          <ul class="clean">
+            <li>ERP yeniden kurulumu / yeniden mimarisi</li>
+            <li>POS / WMS yazılımı geliştirme (entegrasyon hariç)</li>
+            <li>Full-scale OMS (yalnız <b>OMS-Lite</b> dahil)</li>
+            <li>Muhasebe süreçleri, çağrı merkezi yazılımı</li>
+            <li>Marketplace yönetim sistemi (opsiyonel modülle genişler)</li>
+            <li>Donanım, kiosk, IoT entegrasyonları</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="mimari">
+      <h2><span class="n">3</span> Önerilen Çözüm Mimarisi</h2>
+      <p class="sub">Bulutta çalışan, <b>Modüler Monolith</b> tabanlı, API odaklı ve event-driven yaklaşım. İleride belirli modüllerin mikroservise ayrıştırılmasına uygun temel.</p>
+      <div class="layer l1"><h4>① İstemci Katmanı (Client Layer)</h4>Web, mobil web / native, Backoffice paneli, 3rd party B2B/B2C portaller</div>
+      <div class="layer l2"><h4>② API Gateway &amp; BFF (Backend for Frontend)</h4>Tek giriş noktası — yetkilendirme, rate limiting, request yönlendirme; web/mobil için özelleştirilmiş BFF</div>
+      <div class="layer l3"><h4>③ Entegrasyon Katmanı (Integration Hub)</h4>ERP · CRM · ödeme · kargo · pazaryeri entegrasyonları + event/mesajlaşma altyapısı</div>
+      <div class="layer l4"><h4>④ Veri &amp; Depolama Katmanı (Data Layer)</h4>OLTP veritabanları · Cache (Redis) · Arama (Elasticsearch/OpenSearch) · Analitik (Data Mart/DWH)</div>
+      <div class="layer l5"><h4>⑤ Altyapı, Güvenlik &amp; DevOps</h4>Container orkestrasyonu (Kubernetes) · CI/CD · izleme/loglama/alarm · kimlik yönetimi &amp; uyumluluk</div>
+      <div class="note" style="margin-top:18px">
+        <b>Dikkat — mimari evrim:</b> Tanıtım sunumu ve Ar-Ge özeti <b>OSGi + Spring tabanlı microservis</b> ve Java vurgusu yaparken,
+        güncel kavramsal doküman (V2R1) tercih edilen yaklaşımı <b>Modüler Monolith</b> olarak netleştirmiştir.
+        İki yaklaşım çelişmez: tek deployment kolaylığı + domain bazlı modüllerle ileride mikroservise geçiş seçeneği korunur.
+      </div>
+    </section>
+
+    <section id="moduller">
+      <h2><span class="n">4</span> Modül Bazlı Fonksiyonlar (14 Modül)</h2>
+      <p class="sub">Her modül; amaç, temel fonksiyonlar, entegrasyonlar, CRUD, iş akışı, yetkilendirme ve hata senaryolarıyla tanımlıdır.</p>
+      <div class="grid g2">
+        <div class="card mod"><div class="num">7.1</div><h3>📦 Ürün &amp; Katalog Yönetimi</h3><p>Sınırsız kategori, varyant/attribute set, çoklu fiyat listesi (ülke/kanal/segment), depo bazlı stok görünürlüğü, bundle/cross-sell, çoklu dil + SEO. ERP’den senkron, arama indekslemesi.</p></div>
+        <div class="card mod c2"><div class="num">7.2</div><h3>🛒 Sepet &amp; Checkout</h3><p>Sepet CRUD, fiyat/stok/kampanya validasyonu, adres-teslimat-ödeme adımları, kargo &amp; vergi hesabı, guest + kayıtlı kullanıcı sepeti. Payment Gateway, kampanya ve fraud entegrasyonu.</p></div>
+        <div class="card mod c3"><div class="num">7.3</div><h3>📋 Sipariş Yönetimi (OMS-Lite)</h3><p>Sipariş yaşam döngüsü: <code>Created → Reserved → Packed → Shipped → Delivered</code>. Kısmi teslimat/split shipment, iptal/değişiklik, ERP &amp; kargo entegrasyonu, statü bildirimleri.</p></div>
+        <div class="card mod c5"><div class="num">7.4</div><h3>🤖 Kişiselleştirme &amp; Öneri (AI/ML)</h3><p>Öneri motoru, davranış bazlı öneriler, dinamik sıralama (ranking), AI destekli arama (relevans, typo tolerance), segment bazlı vitrin. CRM + tracking event verisi.</p></div>
+        <div class="card mod c4"><div class="num">7.5</div><h3>🎯 Kampanya &amp; Promosyon</h3><p>Sepet/ürün kampanyaları, kupon &amp; hediye çeki, segment/kanal bazlı kurallar, öncelik &amp; çakışma yönetimi, dry-run test, performans raporları. If-Then kural motoru.</p></div>
+        <div class="card mod"><div class="num">7.6</div><h3>📝 CMS — İçerik Yönetimi</h3><p>Drag&amp;drop sayfa/bileşen tasarımı, çoklu dil içerik, banner/kampanya alanları, taslak-yayın-arşiv statüleri, zamanlanmış yayın. Kişiselleştirme motoru ile segment bazlı içerik.</p></div>
+        <div class="card mod c2"><div class="num">7.7</div><h3>👤 Müşteri Yönetimi</h3><p>Üyelik/giriş/şifre, sosyal giriş, profil &amp; adres, sipariş geçmişi, KVKK/GDPR rıza takibi, anonimleştirme (soft delete). CRM + ERP entegrasyonu.</p></div>
+        <div class="card mod c3"><div class="num">7.8</div><h3>🚚 Lojistik &amp; Teslimat</h3><p>Çoklu depo/hub, bölge bazlı teslimat kuralları, teslimat türleri (standart/ekspres/mağazadan teslim), kargo seçimi &amp; etiket. Kargo API + ERP/WMS.</p></div>
+        <div class="card mod c4"><div class="num">7.9</div><h3>↩️ İade &amp; Değişim (RMA)</h3><p>Online iade/değişim talebi, RMA numarası, kargo etiketi, depo kontrolü, iade onay/red &amp; değişim siparişi. ERP iade hareketi + Payment refund.</p></div>
+        <div class="card mod c5"><div class="num">7.10</div><h3>💳 Ödeme Yönetimi</h3><p>Kart/cüzdan/havale, 3D Secure, taksit (ülke-banka bazlı), fraud kuralları, provizyon-capture-refund. Iyzico, PayTR, Stripe, PayPal, Klarna.</p></div>
+        <div class="card mod"><div class="num">7.11</div><h3>🌍 Çoklu Ülke &amp; Çoklu Marka</h3><p>Çoklu para birimi, ülke/vergi seti, ülke-marka bazlı katalog &amp; fiyat, bölgesel teslimat/ödeme. ERP çoklu şirket kodu yapısı. Global + yerel admin yetkileri.</p></div>
+        <div class="card mod c2"><div class="num">7.12</div><h3>🔐 Yetkilendirme &amp; Rol</h3><p>RBAC, modül/ekran/aksiyon bazlı izinler, oturum &amp; token yönetimi, audit log. Kurumsal IAM/SSO (opsiyonel) entegrasyonu.</p></div>
+        <div class="card mod c3"><div class="num">7.13</div><h3>🖥️ Backoffice Yönetim Paneli</h3><p>Tüm iş birimleri için tek operasyon paneli: sipariş, ürün, kampanya, müşteri, içerik, lojistik, rapor. Dashboard &amp; KPI, filtre/export/toplu işlem.</p></div>
+        <div class="card mod c4"><div class="num">7.14</div><h3>🔌 Entegrasyon Modülü (Integration Hub)</h3><p>Tüm ERP/CRM/ödeme/kargo/pazaryeri entegrasyonlarının merkezi. Event-driven (message queue), mapping, loglama, retry &amp; dead-letter queue.</p></div>
+      </div>
+    </section>
+
+    <section id="entegrasyon">
+      <h2><span class="n">5</span> Entegrasyon Mimarisi — Integration Hub</h2>
+      <p class="sub">API-First · Event-Driven · ERP-agnostik · Idempotent işlemler · Retry &amp; error handling. 5 bileşenli merkezi katman.</p>
+      <div class="grid g3" style="margin-bottom:18px">
+        <div class="card"><h3>🔗 Connector Layer</h3><p>SAP (IDoc/BAPI/OData/RFC), REST/SOAP, SFTP/Flat File (legacy), Marketplace connector’ları.</p></div>
+        <div class="card"><h3>🔄 Mapping Engine</h3><p>ERP alanları → platform alanları; fiyat/stok formatları; para birimi, vergi seti, birim dönüşümü.</p></div>
+        <div class="card"><h3>📐 Rule Engine</h3><p>Veri doğrulama, zorunlu alan, para birimi verifikasyonu, vergi kodu eşleştirme.</p></div>
+        <div class="card"><h3>📊 Log &amp; Monitoring</h3><p>Detaylı loglar, mesaj durumları, SLA ölçümleri, Kibana/Grafana panel entegrasyonu.</p></div>
+        <div class="card"><h3>♻️ Retry &amp; Error Handling</h3><p>Otomatik tekrar deneme, Dead-Letter Queue (DLQ), operasyon ekranında hata bildirimi.</p></div>
+        <div class="card"><h3>⏱️ Entegrasyon Tipleri</h3><p><b>Real-time:</b> sipariş, ödeme, stok rezervasyonu · <b>Near-RT:</b> stok/fiyat/segment · <b>Batch:</b> büyük fiyat listeleri, legacy.</p></div>
+      </div>
+      <h3 style="margin:0 0 10px">Entegre Edilen Sistemler</h3>
+      <table>
+        <tr><th>Kategori</th><th>Sistemler</th><th>Akış</th></tr>
+        <tr><td>ERP</td><td>SAP S/4HANA &amp; ECC, Oracle, Dynamics, Logo, NetSuite</td><td>Ürün, fiyat, stok, sipariş, fatura, iade, müşteri</td></tr>
+        <tr><td>CRM</td><td>SAP CRM, Salesforce, HubSpot, Dynamics CRM</td><td>Müşteri profili, segment, davranışsal veri</td></tr>
+        <tr><td>Ödeme</td><td>Iyzico, PayTR, Stripe, PayPal, Klarna</td><td>Provizyon, capture, refund, fraud</td></tr>
+        <tr><td>Kargo</td><td>Yurtiçi, Aras, UPS, DHL, FedEx</td><td>Etiket, takip no, teslimat statüsü</td></tr>
+        <tr><td>Pazaryeri <span class="tag">opsiyonel</span></td><td>Trendyol, Hepsiburada, Amazon, eBay</td><td>Ürün/stok/fiyat push, sipariş pull</td></tr>
+      </table>
+    </section>
+
+    <section id="veri">
+      <h2><span class="n">6</span> Veri Yönetimi</h2>
+      <p class="sub">MDG (single-source-of-truth = ERP), data consistency (idempotent), data freshness (near-RT), erişim domain bazlı, KVKK/GDPR uyumlu.</p>
+      <div class="grid g3">
+        <div class="card"><h3>🗄️ OLTP</h3><p>Ortak veritabanı; ancak domain bazlı (ürün, fiyat/stok, sipariş, müşteri, kampanya, CMS, lojistik) mantıksal ayrışma.</p></div>
+        <div class="card"><h3>⚡ Cache / In-Memory</h3><p>Redis / Memcached — stok, fiyat, sepet, checkout, kategori ağaçları.</p></div>
+        <div class="card"><h3>🔍 Arama / Indexing</h3><p>Elasticsearch / OpenSearch — arama, filtreleme, sıralama, çoklu dil, indeks refresh.</p></div>
+        <div class="card"><h3>📨 Event Store / Queue</h3><p>Kafka / RabbitMQ — sipariş/stok/fiyat event’leri, asenkron tutarlılık, DLQ &amp; retry.</p></div>
+        <div class="card"><h3>📈 Analitik (Data Lake / DWH)</h3><p>Satış raporları, ürün performansı, kampanya analizleri, müşteri davranışı.</p></div>
+        <div class="card"><h3>🛡️ Veri Güvenliği</h3><p>AES-256 (rest), TLS 1.2/1.3 (transit), erişim kontrolü, audit log, KVKK/GDPR saklama politikaları.</p></div>
+      </div>
+    </section>
+
+    <section id="guvenlik">
+      <h2><span class="n">7</span> Performans, Güvenlik &amp; Uyumluluk</h2>
+      <div class="grid g3">
+        <div class="card">
+          <h3><span class="ic">🚀</span> Performans (SLO)</h3>
+          <ul class="clean">
+            <li>Sayfa açılış: <b>&lt; 2.5 sn</b></li>
+            <li>API yanıt (P95): <b>&lt; 300 ms</b></li>
+            <li>Sepet güncelleme: <b>&lt; 200 ms</b></li>
+            <li>Checkout toplam: <b>&lt; 5 sn</b></li>
+            <li>Arama sonuçları: <b>&lt; 150 ms</b></li>
+          </ul>
+          <p style="margin-top:8px">Cache-first, CDN, auto-scaling, circuit breaker; load/stress/soak test (flash sale, Black Friday).</p>
+        </div>
+        <div class="card">
+          <h3><span class="ic">🔒</span> Güvenlik</h3>
+          <ul class="clean">
+            <li>Zero Trust + Least Privilege</li>
+            <li>OAuth2 / OpenID Connect / JWT · <b>Keycloak</b> · LDAP</li>
+            <li>RBAC + API scope yetkilendirme</li>
+            <li>WAF, rate limiting, IP whitelist, DDoS koruma</li>
+            <li>OWASP Top 10, CSRF/XSS/SQLi koruması</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="ic">📜</span> Uyumluluk</h3>
+          <ul class="clean">
+            <li>KVKK / GDPR (açık rıza, unutulma hakkı, taşınabilirlik)</li>
+            <li>PCI-DSS (kart bilgisi platformda tutulmaz, tokenization)</li>
+            <li>Mesafeli satış, ülkeye özgü vergi/fatura</li>
+            <li>ISO 27001, audit log, SLA/SLO/KPI ölçümü</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="paneller">
+      <h2><span class="n">8</span> Çalışan Demo — 3 Kullanıcı Paneli</h2>
+      <p class="sub">Kullanım kılavuzu (User Manual V6R1), platformun canlı demosunu üç panel halinde ekran ekran belgeler.</p>
+      <div class="grid g3">
+        <div class="panel admin">
+          <div class="top"><span>🛠️ Admin Backoffice</span></div>
+          <div class="body">
+            <p style="color:var(--mut);font-size:.86rem">Platformun merkezi yönetimi — tüm taraflar, finans ve ayarlar.</p>
+            <ul>
+              <li>Dashboard &amp; yönetim özeti (gelir, büyüme)</li>
+              <li>Kullanıcı, Satıcı, Kategori, Ürün, Sipariş yönetimi</li>
+              <li>Teslimat yöntemleri &amp; mağaza atamaları</li>
+              <li>Finansal yönetim, Raporlar, E-posta şablonları</li>
+              <li>Bildirim merkezi, Sistem ayarları</li>
+            </ul>
+            <code>/admin-login</code>
+          </div>
+        </div>
+        <div class="panel seller">
+          <div class="top"><span>🏪 Seller Backoffice</span></div>
+          <div class="body">
+            <p style="color:var(--mut);font-size:.86rem">Mağaza sahibi satıcılar için kendi operasyon paneli.</p>
+            <ul>
+              <li>Satıcı dashboard &amp; satış istatistikleri</li>
+              <li>Ürünlerim (tekli + toplu JSON ekleme)</li>
+              <li>Stok yönetimi &amp; kritik stok eşiği</li>
+              <li>Siparişlerim, Kampanyalarım</li>
+              <li>Mağaza/Hesap/Bildirim ayarları, kategori isteği</li>
+            </ul>
+            <code>/seller-login</code>
+          </div>
+        </div>
+        <div class="panel client">
+          <div class="top"><span>🛍️ Client (Müşteri)</span></div>
+          <div class="body">
+            <p style="color:var(--mut);font-size:.86rem">Son kullanıcı alışveriş arayüzü (storefront).</p>
+            <ul>
+              <li>Ana sayfa, kategori menüsü, arama</li>
+              <li>İndirimli / trend / kişiselleştirilmiş öneriler</li>
+              <li>Ürün detay (görseller, yorum, sekme bilgileri)</li>
+              <li>Sepet → 3 adımlı güvenli ödeme (adres/teslimat/onay)</li>
+              <li>Profil, Favoriler, Siparişlerim</li>
+            </ul>
+            <code>/ (storefront)</code>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:16px"><b>Not:</b> Demo, sabit bir IP adresi üzerinde yayında (kullanım kılavuzunda erişim adresleri verilmiş). Bu, projenin yalnızca konsept değil <b>çalışan bir ürün</b> seviyesine ulaştığını gösterir.</div>
+    </section>
+
+    <section id="akislar">
+      <h2><span class="n">9</span> Temel Süreç Akışları (TO-BE)</h2>
+      <p class="sub">Kavramsal seviyede uçtan uca akışlar.</p>
+      <h4 style="margin:18px 0 8px">Sipariş Akışı</h4>
+      <div class="flow"><span class="step">Kullanıcı</span><span class="arr">→</span><span class="step">Checkout</span><span class="arr">→</span><span class="step">Ödeme Gateway</span><span class="arr">→</span><span class="step">OMS-Lite</span><span class="arr">→</span><span class="step">ERP</span><span class="arr">→</span><span class="step">Kargo</span><span class="arr">→</span><span class="step">Kullanıcı</span></div>
+      <h4 style="margin:18px 0 8px">Ürün Senkronizasyon Akışı</h4>
+      <div class="flow"><span class="step">ERP</span><span class="arr">→</span><span class="step">Integration Hub</span><span class="arr">→</span><span class="step">Katalog Servisi</span><span class="arr">→</span><span class="step">Arama Servisi</span><span class="arr">→</span><span class="step">Web / Mobil</span></div>
+      <h4 style="margin:18px 0 8px">İade / RMA Akışı</h4>
+      <div class="flow"><span class="step">Kullanıcı</span><span class="arr">→</span><span class="step">RMA Talep</span><span class="arr">→</span><span class="step">Depo</span><span class="arr">→</span><span class="step">ERP</span><span class="arr">→</span><span class="step">Ödeme İadesi</span><span class="arr">→</span><span class="step">Kullanıcı</span></div>
+      <h4 style="margin:18px 0 8px">Kampanya Hesaplama Akışı</h4>
+      <div class="flow"><span class="step">Kullanıcı</span><span class="arr">→</span><span class="step">Sepet</span><span class="arr">→</span><span class="step">Kampanya Motoru</span><span class="arr">→</span><span class="step">Fiyat Güncelleme</span><span class="arr">→</span><span class="step">Sipariş</span></div>
+      <h4 style="margin:18px 0 8px">Çoklu Ülke Operasyon Akışı</h4>
+      <div class="flow"><span class="step">Ülke Seçimi</span><span class="arr">→</span><span class="step">Para Birimi</span><span class="arr">→</span><span class="step">Vergi Seti</span><span class="arr">→</span><span class="step">Ödeme</span><span class="arr">→</span><span class="step">Fulfillment</span><span class="arr">→</span><span class="step">ERP</span></div>
+    </section>
+
+    <section id="metodoloji">
+      <h2><span class="n">10</span> Proje Yaklaşımı &amp; Metodoloji</h2>
+      <p class="sub">Agile-Scrum · iteratif ve artımsal teslimat · şeffaflık. 7 fazlı yol haritası.</p>
+      <div class="timeline">
+        <div class="tl"><h4>1 · Hazırlık &amp; Kapsam Netleştirme</h4><p>Kapsam, paydaş hizalaması, ön gereksinim toplama.</p></div>
+        <div class="tl"><h4>2 · Analiz &amp; İş Kuralları</h4><p>Detaylı gereksinim, iş kuralları, entegrasyon analizi.</p></div>
+        <div class="tl"><h4>3 · Tasarım</h4><p>Mimari, veri modeli, UI/UX, entegrasyon tasarımı.</p></div>
+        <div class="tl"><h4>4 · Geliştirme &amp; Modül Teslimatları</h4><p>Sprint bazlı geliştirme, modül modül teslim.</p></div>
+        <div class="tl"><h4>5 · Test</h4><p>Birim/entegrasyon/regresyon + load/stress/soak testleri.</p></div>
+        <div class="tl"><h4>6 · Kullanıcı Kabul Testi (UAT)</h4><p>İş birimleri ile son doğrulama.</p></div>
+        <div class="tl"><h4>7 · Canlıya Alma &amp; Stabilizasyon</h4><p>Kontrollü geçiş (Blue/Green, Canary) + destek.</p></div>
+      </div>
+      <div class="grid g4" style="margin-top:18px">
+        <div class="stat"><div class="v">Git</div><div class="l">GitFlow branching</div></div>
+        <div class="stat"><div class="v">CI/CD</div><div class="l">Dev→Test→PreProd→Prod</div></div>
+        <div class="stat"><div class="v">Docker</div><div class="l">K8s container deploy</div></div>
+        <div class="stat"><div class="v">Multi-Cloud</div><div class="l">AWS / Azure / GCP</div></div>
+      </div>
+    </section>
+
+    <section id="argeyenilik">
+      <h2><span class="n">11</span> Ar-Ge Niteliği &amp; Yenilikçi Yön</h2>
+      <p class="sub">Proje, bir Ar-Ge (TGB/TEKMER) projesi olarak konumlanıyor; üniversite işbirliği ve patent hedefi içeriyor.</p>
+      <div class="grid g2">
+        <div class="card">
+          <h3><span class="ic">🔬</span> Ar-Ge Bileşenleri</h3>
+          <ul class="clean">
+            <li>Yapay zeka &amp; makine öğrenmesi yapıları</li>
+            <li>Ürün detay &amp; checkout’ta akıllı ürün önerileri</li>
+            <li>Müşteri alışkanlığına göre akıllı arama sıralaması &amp; öne çıkarma</li>
+            <li>Akıllı promosyon / kampanya yapıları</li>
+            <li>Büyük veri işleme, in-memory &amp; dağıtık veri süreçleri</li>
+            <li>Performans algoritmaları &amp; cache yapıları</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="ic">🎓</span> İşbirliği &amp; Fikri Mülkiyet</h3>
+          <ul class="clean">
+            <li>Çanakkale 18 Mart Üniversitesi ile yakın işbirliği</li>
+            <li>Öğretim/araştırma görevlileriyle AI/ML &amp; istatistiksel modelleme çalışmaları</li>
+            <li>Tez öğrencileri ve stajyerlerin projeye dahli</li>
+            <li>Geliştirilen algoritma/model/yapılar için <b>patent başvuruları</b></li>
+            <li>Ürün için ulusal &amp; uluslararası marka/patent hakları</li>
+          </ul>
+        </div>
+      </div>
+      <h3 style="margin:24px 0 10px">Tanıtım Sunumundaki İş Değeri Metrikleri</h3>
+      <div class="stats">
+        <div class="stat"><div class="v">%35</div><div class="l">Kişisel öneri → sepet tutarı artışı</div></div>
+        <div class="stat"><div class="v">%40</div><div class="l">Dinamik kampanya etkinliği</div></div>
+        <div class="stat"><div class="v">%25</div><div class="l">Akıllı arama dönüşüm artışı</div></div>
+        <div class="stat"><div class="v">%99.9</div><div class="l">Fault-tolerant uptime hedefi</div></div>
+      </div>
+    </section>
+
+    <section id="kaynaklar">
+      <h2><span class="n">12</span> Kaynak Dosyalar</h2>
+      <table>
+        <tr><th>Dosya</th><th>Tür</th><th>Rol</th></tr>
+        <tr><td>ENOCA-KEP.pdf</td><td>Ar-Ge proje özeti</td><td>Proje künyesi, Ar-Ge niteliği, teknik çıktılar, üniversite/patent</td></tr>
+        <tr><td>000_…_PROJE_DOKUMANI_V2R1.docx</td><td>Kavramsal Proje Dokümanı (PRD)</td><td>16 bölüm: kapsam, 14 modül, mimari, entegrasyon, veri, güvenlik, metodoloji, organizasyon, teslimatlar</td></tr>
+        <tr><td>16062026_KEPDemo_UserManuel_V6R1.docx</td><td>Kullanım Kılavuzu</td><td>Çalışan demo — Admin / Seller / Client panelleri (ekran ekran)</td></tr>
+        <tr><td>230326_Modüler_E-Ticaret_Platformu_sunum.pptx</td><td>Tanıtım sunumu (8 slayt)</td><td>ROI odaklı pazarlama anlatısı, iş değeri metrikleri</td></tr>
+      </table>
+    </section>
+
+    <footer>
+      <p><b>enoca™ — KEP (Kurumsal E-Ticaret Platformu)</b> · Proje Kodu: ENOCA-KEP · İletişim: contact@enoca.com · www.enoca.com</p>
+      <p>Bu özet sayfası, proje dokümantasyonundaki (PDF + 2 Word + sunum) bilgilerin sentezlenmesiyle otomatik olarak oluşturulmuştur.</p>
+    </footer>
+  </main>
+</div>
+</body>
+</html>

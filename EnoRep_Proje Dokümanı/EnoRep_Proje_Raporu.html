@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnoRep - Proje Dokümanları</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --secondary: #2c5282;
+            --accent: #3182ce;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+            --bg-light: #f7fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-light);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: rgba(255,255,255,0.05);
+            transform: rotate(-15deg);
+        }
+
+        .header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .header-meta {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        .header-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            border: 1px solid var(--border);
+        }
+
+        .project-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .doc-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+            border-color: var(--accent);
+        }
+
+        .doc-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .doc-icon-pptx {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa502 100%);
+            color: white;
+        }
+
+        .doc-icon-pdf {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+        }
+
+        .doc-icon-docx {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+            color: white;
+        }
+
+        .doc-icon-html {
+            background: linear-gradient(135deg, #38a169 0%, #276749 100%);
+            color: white;
+        }
+
+        .doc-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+
+        .doc-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .doc-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .doc-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: auto;
+        }
+
+        .doc-link:hover {
+            background: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .doc-link.disabled {
+            background: var(--border);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .feature-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-content p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.85rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .footer {
+            background: var(--primary);
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .footer p {
+            opacity: 0.85;
+            font-size: 0.9rem;
+        }
+
+        .footer strong {
+            opacity: 1;
+        }
+
+        .footer-divider {
+            width: 60px;
+            height: 3px;
+            background: var(--accent);
+            margin: 1rem auto;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header-meta {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .documents-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <span class="header-badge">EnoRep Proje Dokümanları</span>
+            <h1>EnoRep</h1>
+            <p class="header-subtitle">Akıllı Ürün Öneri ve Entegrasyon Platformu</p>
+            <div class="header-meta">
+                <span class="header-meta-item">
+                    <i class="fas fa-university"></i>
+                    Çanakkale 18 Mart Üniversitesi
+                </span>
+                <span class="header-meta-item">
+                    <i class="fas fa-building"></i>
+                    enoca Analiz, Mimari ve AR-GE
+                </span>
+                <span class="header-meta-item">
+                    <i class="fas fa-code-branch"></i>
+                    Versiyon V3.0
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Proje Açıklaması -->
+        <section class="section">
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Proje Hakkında
+                </h2>
+                <p class="project-description">
+                    <strong>EnoRep</strong>, e-ticaret işletmeleri için yapay zeka destekli akıllı çapraz satış (cross-selling) çözümüdür. 
+                    Apriori algoritması ile ürünler arası gizli ilişkileri tespit ederek ortalama sepet değerini (AOV) <strong>%20-30</strong> artırmayı hedefler.
+                    KVKK/GDPR uyumlu, yabancı bağımlılığı olmayan milli teknoloji ürünüdür.
+                </p>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Apriori Algoritması</h4>
+                            <p>Apache Spark ile ürün ilişki madenciliği</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Çift Yönlü Senkronizasyon</h4>
+                            <p>ERP, pazaryeri ve CRM entegrasyonları</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>KVKK/GDPR Uyumlu</h4>
+                            <p>Güvenli veri işleme altyapısı</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>&lt;300ms Yanıt Süresi</h4>
+                            <p>Yüksek performanslı API altyapısı</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tech-stack">
+                    <span class="tech-badge"><i class="fas fa-leaf"></i> Spring Boot</span>
+                    <span class="tech-badge"><i class="fas fa-database"></i> PostgreSQL 15</span>
+                    <span class="tech-badge"><i class="fab fa-ubuntu"></i> Redis Cache</span>
+                    <span class="tech-badge"><i class="fas fa-search"></i> Elasticsearch</span>
+                    <span class="tech-badge"><i class="fab fa-apache"></i> Apache Kafka</span>
+                    <span class="tech-badge"><i class="fas fa-fire"></i> Apache Spark</span>
+                    <span class="tech-badge"><i class="fab fa-react"></i> Next.js 14</span>
+                    <span class="tech-badge"><i class="fas fa-key"></i> Keycloak SSO</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Proje Dokümanları -->
+        <section class="section">
+            <h2 class="section-title">
+                <i class="fas fa-folder-open"></i>
+                Proje Dokümanları
+            </h2>
+            <div class="documents-grid">
+                <!-- Sunum -->
+                <div class="doc-card">
+                    <div class="doc-icon-wrapper doc-icon-pptx">
+                        <i class="fas fa-presentation"></i>
+                    </div>
+                    <h3 class="doc-title">230326_Recommendation_ Sunum.pptx</h3>
+                    <p class="doc-description">
+                        Projenin tanıtım sunumu. Proje hedefleri, mimari yapısı, temel özellikler ve 
+                        beklenen çıktıların yer aldığı genel bakış dokümanı.
+                    </p>
+                    <div class="doc-meta">
+                        <span class="doc-meta-item">
+                            <i class="far fa-file-powerpoint"></i> PowerPoint
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="far fa-calendar"></i> 26 Mart 2023
+                        </span>
+                    </div>
+                    <a href="230326_Recommendation_ Sunum.pptx" class="doc-link" download>
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                </div>
+
+                <!-- PDF Doküman -->
+                <div class="doc-card">
+                    <div class="doc-icon-wrapper doc-icon-pdf">
+                        <i class="far fa-file-pdf"></i>
+                    </div>
+                    <h3 class="doc-title">ENOCA-REP 1.pdf</h3>
+                    <p class="doc-description">
+                        Projenin detaylı PDF formatındaki dokümantasyonu. Teknik spesifikasyonlar, 
+                        sistem gereksinimleri ve mimari diyagramları içerir.
+                    </p>
+                    <div class="doc-meta">
+                        <span class="doc-meta-item">
+                            <i class="far fa-file-pdf"></i> PDF
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="far fa-calendar"></i> 2023
+                        </span>
+                    </div>
+                    <a href="ENOCA-REP 1.pdf" class="doc-link" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Aç
+                    </a>
+                </div>
+
+                <!-- Kurumsal Dokümantasyon -->
+                <div class="doc-card">
+                    <div class="doc-icon-wrapper doc-icon-docx">
+                        <i class="far fa-file-word"></i>
+                    </div>
+                    <h3 class="doc-title">EnoRep_Kurumsal_Proje_Dokumantasyonu.docx</h3>
+                    <p class="doc-description">
+                        Kurumsal formatta hazırlanmış kapsamlı proje dokümantasyonu. 
+                        Proje yönetimi, takvim, bütçe ve risk analizi bölümlerini içerir.
+                    </p>
+                    <div class="doc-meta">
+                        <span class="doc-meta-item">
+                            <i class="far fa-file-word"></i> Word
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="far fa-calendar"></i> 2023
+                        </span>
+                    </div>
+                    <a href="EnoRep_Kurumsal_Proje_Dokumantasyonu.docx" class="doc-link" download>
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                </div>
+
+                <!-- Proje Raporu (HTML - Aktif) -->
+                <div class="doc-card">
+                    <div class="doc-icon-wrapper doc-icon-html">
+                        <i class="far fa-file-code"></i>
+                    </div>
+                    <h3 class="doc-title">EnoRep_Proje_Raporu.html</h3>
+                    <p class="doc-description">
+                        <strong>Bu sayfa.</strong> Projenin teknik raporu; 12 modül, mimari diyagramlar, 
+                        API dokümantasyonu, veritabanı şemaları ve kullanıcı akışlarını içerir.
+                    </p>
+                    <div class="doc-meta">
+                        <span class="doc-meta-item">
+                            <i class="far fa-file-code"></i> HTML
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="fas fa-code"></i> V3.0
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="far fa-calendar"></i> 24 Haziran 2026
+                        </span>
+                    </div>
+                    <span class="doc-link disabled">
+                        <i class="fas fa-check-circle"></i> Aktif Sayfa
+                    </span>
+                </div>
+
+                <!-- Kullanıcı Manueli -->
+                <div class="doc-card">
+                    <div class="doc-icon-wrapper doc-icon-docx">
+                        <i class="far fa-file-word"></i>
+                    </div>
+                    <h3 class="doc-title">EnoRep_UserManuel_V3 (1).docx</h3>
+                    <p class="doc-description">
+                        Kullanıcı rehberi. Admin panel, seller portal, entegrasyon ayarları, 
+                        yerel/harici eşitleme ve hata yönetimi konularında adım adım talimatlar.
+                    </p>
+                    <div class="doc-meta">
+                        <span class="doc-meta-item">
+                            <i class="far fa-file-word"></i> Word
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="fas fa-code"></i> V3
+                        </span>
+                        <span class="doc-meta-item">
+                            <i class="far fa-calendar"></i> 2026
+                        </span>
+                    </div>
+                    <a href="EnoRep_UserManuel_V3 (1).docx" class="doc-link" download>
+                        <i class="fas fa-download"></i> İndir
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hızlı Erişim -->
+        <section class="section">
+            <h2 class="section-title">
+                <i class="fas fa-layer-group"></i>
+                12 Temel Modül
+            </h2>
+            <div class="card">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-plug"></i></div>
+                        <div class="feature-content">
+                            <h4>1. Bağlantı Ayarları</h4>
+                            <p>API URL, anahtar tanımlama, canlı bağlantı testi</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-code"></i></div>
+                        <div class="feature-content">
+                            <h4>2. Yerel Kod Eşitleme</h4>
+                            <p>Boş recommendation_code alanlarını doldurma</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="feature-content">
+                            <h4>3. Harici Katalog Senkronizasyonu</h4>
+                            <p>EnoRep API'ye batch ürün aktarımı</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                        <div class="feature-content">
+                            <h4>4. Akıllı Öneri Motoru (AI)</h4>
+                            <p>Apache Spark + Apriori algoritması</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-sliders-h"></i></div>
+                        <div class="feature-content">
+                            <h4>5. Kural Yapılandırma</h4>
+                            <p>Kara liste / Beyaz liste kuralları</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="feature-content">
+                            <h4>6. Hata Yönetimi</h4>
+                            <p>Retry/DLQ mekanizması</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-tachometer-alt"></i></div>
+                        <div class="feature-content">
+                            <h4>7. Admin Backoffice</h4>
+                            <p>Dashboard, metrikler, sistem sağlığı</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-store"></i></div>
+                        <div class="feature-content">
+                            <h4>8. Seller Portal</h4>
+                            <p>Toplu ürün yüklemesi, JSON izleme</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-th"></i></div>
+                        <div class="feature-content">
+                            <h4>9. Client Widget'ları</h4>
+                            <p>"Sizin İçin Seçtiklerimiz" carousel</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
+                        <div class="feature-content">
+                            <h4>10. Raporlama & Analitik</h4>
+                            <p>AOV artışı, dönüşüm oranları</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-network-wired"></i></div>
+                        <div class="feature-content">
+                            <h4>11. API Gateway</h4>
+                            <p>Rate limiting, circuit breaker</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-user-shield"></i></div>
+                        <div class="feature-content">
+                            <h4>12. Yetkilendirme (RBAC)</h4>
+                            <p>Keycloak SSO, OAuth2/OIDC</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="footer">
+        <p><strong>EnoRep</strong> - Akıllı Ürün Öneri ve Entegrasyon Platformu</p>
+        <div class="footer-divider"></div>
+        <p>enoca Analiz, Mimari ve AR-GE Ekipleri | Çanakkale 18 Mart Üniversitesi</p>
+        <p style="margin-top: 0.75rem; opacity: 0.6;">Versiyon V3.0 - 24 Haziran 2026</p>
+    </footer>
+</body>
+</html>

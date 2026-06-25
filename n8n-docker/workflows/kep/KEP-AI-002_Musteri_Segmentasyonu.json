@@ -1,0 +1,188 @@
+{
+  "name": "KEP-AI-002: Müşteri Segmentasyonu",
+  "nodes": [
+    {
+      "id": "cron-trigger",
+      "name": "Günlük Trigger",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "day",
+              "hours": [2],
+              "minutes": [0]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-customers",
+      "name": "Müşteri Verisi Çek",
+      "type": "n8n-nodes-base.postgres",
+      "position": [450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.email, c.created_at, \n  COUNT(o.id) as order_count,\n  COALESCE(SUM(o.total_amount), 0) as total_spent,\n  MAX(o.created_at) as last_order_date,\n  COUNT(DISTINCT DATE_TRUNC('month', o.created_at)) as months_active\nFROM customers c\nLEFT JOIN orders o ON c.id = o.customer_id\nWHERE c.created_at >= NOW() - INTERVAL '180 days'\nGROUP BY c.id, c.email, c.created_at",
+        "options": {}
+      }
+    },
+    {
+      "id": "clv-calculation",
+      "name": "CLV Hesaplama",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// CLV ve RFM hesaplaması\nconst customers = $input.all();\n\nconst today = new Date();\nconst result = customers.map(({ json }) => {\n  const lastOrder = new Date(json.last_order_date || json.created_at);\n  const daysSinceLastOrder = Math.floor((today - lastOrder) / (1000 * 60 * 60 * 24));\n  \n  // RFM Scoring\n  const recencyScore = daysSinceLastOrder <= 30 ? 5 : \n                      daysSinceLastOrder <= 60 ? 4 :\n                      daysSinceLastOrder <= 90 ? 3 :\n                      daysSinceLastOrder <= 180 ? 2 : 1;\n  \n  const frequencyScore = json.order_count >= 10 ? 5 :\n                         json.order_count >= 5 ? 4 :\n                         json.order_count >= 3 ? 3 :\n                         json.order_count >= 1 ? 2 : 1;\n  \n  const monetaryScore = json.total_spent >= 50000 ? 5 :\n                        json.total_spent >= 20000 ? 4 :\n                        json.total_spent >= 10000 ? 3 :\n                        json.total_spent >= 5000 ? 2 : 1;\n  \n  const rfmScore = recencyScore + frequencyScore + monetaryScore;\n  \n  // Segment belirleme\n  let segment = 'NEW';\n  if (json.order_count === 0) segment = 'POTENTIAL';\n  else if (rfmScore >= 12) segment = 'CHAMPIONS';\n  else if (rfmScore >= 9) segment = 'LOYAL';\n  else if (daysSinceLastOrder > 60) segment = 'AT_RISK';\n  else if (daysSinceLastOrder > 120) segment = 'CHURNED';\n  else segment = 'ACTIVE';\n  \n  // CLV Tahmini (basit hesaplama)\n  const avgOrderValue = json.order_count > 0 ? json.total_spent / json.order_count : 0;\n  const expectedYearlyOrders = json.order_count > 0 ? (365 / (today - new Date(json.created_at)) * 1000 * json.order_count / 1000) : 0;\n  const estimatedCLV = avgOrderValue * expectedYearlyOrders * 0.3; // 0.3 = marj\n  \n  return {\n    json: {\n      customerId: json.id,\n      email: json.email,\n      orderCount: json.order_count,\n      totalSpent: json.total_spent,\n      daysSinceLastOrder,\n      rfmScore,\n      recencyScore,\n      frequencyScore,\n      monetaryScore,\n      segment,\n      estimatedCLV: Math.round(estimatedCLV)\n    }\n  };\n});\n\nreturn result;"
+      }
+    },
+    {
+      "id": "ai-segmentation",
+      "name": "AI Segmentasyon Analizi",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [850, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen bir müşteri segmentasyon uzmanısın. Müşteri verilerini analiz ederek segmentasyon önerileri sunarsın.",
+        "prompt": "Şu müşteri segmentasyonu sonuçlarını analiz et ve iyileştirme öner:\n\n{{ $json }}\n\nHer segment için:\n1. Doğru segmentte mi?\n2. Özel aksiyon gerekli mi?\n3. Kampanya önerisi var mı?\n\nJSON formatında dön.",
+        "options": {
+          "maxTokens": 800,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "update-segments",
+      "name": "Segment Güncelle",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1050, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE customers SET \n  segment = '{{ $json.segment }}',\n  rfm_score = {{ $json.rfmScore }},\n  estimated_clv = {{ $json.estimatedCLV }},\n  last_segment_update = NOW()\nWHERE id = '{{ $json.customerId }}'",
+        "options": {}
+      }
+    },
+    {
+      "id": "trigger-campaigns",
+      "name": "Kampanya Tetikle",
+      "type": "n8n-nodes-base.switch",
+      "position": [1250, 300],
+      "parameters": {
+        "dataType": "string",
+        "valueComparison": "=",
+        "threshold": null,
+        "fallbackOutput": "default",
+        "rules": {
+          "rules": [
+            {
+              "name": "Champions",
+              "value": "CHAMPIONS",
+              "output": "champions"
+            },
+            {
+              "name": "Loyal",
+              "value": "LOYAL",
+              "output": "loyal"
+            },
+            {
+              "name": "At Risk",
+              "value": "AT_RISK",
+              "output": "at_risk"
+            },
+            {
+              "name": "Churned",
+              "value": "CHURNED",
+              "output": "churned"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "champion-email",
+      "name": "Champions Email",
+      "type": "n8n-nodes-base.slack",
+      "position": [1450, 100],
+      "parameters": {
+        "channel": "=#marketing-campaigns",
+        "text": "=🏆 *Champions Segment - Özel Kampanya*\n\n{{ $json.customerId }} - CLV: ₺{{ $json.estimatedCLV }}\n\nBu müşteriye özel VIP teklifi gönderilsin.",
+        "options": {}
+      }
+    },
+    {
+      "id": "loyal-email",
+      "name": "Loyal Email",
+      "type": "n8n-nodes-base.slack",
+      "position": [1450, 200],
+      "parameters": {
+        "channel": "=#marketing-campaigns",
+        "text": "=💎 *Loyal Müşteri - Sadakat Programı*\n\n{{ $json.customerId }}\n\nSadakat puanı bonus kampanyası başlatılsın.",
+        "options": {}
+      }
+    },
+    {
+      "id": "winback-email",
+      "name": "Win-back Email",
+      "type": "n8n-nodes-base.slack",
+      "position": [1450, 400],
+      "parameters": {
+        "channel": "=#marketing-campaigns",
+        "text": "=⚠️ *At Risk Müşteri - Win-back Gerekli*\n\n{{ $json.customerId }} - {{ $json.daysSinceLastOrder }} gündür sipariş yok\n\nÖzel geri kazanım kampanyası başlatılsın.",
+        "options": {}
+      }
+    },
+    {
+      "id": "churn-notify",
+      "name": "Churn Bildirim",
+      "type": "n8n-nodes-base.slack",
+      "position": [1450, 500],
+      "parameters": {
+        "channel": "=#customer-success",
+        "text": "=🚨 *Churned Müşteri Tespit*\n\n{{ $json.customerId }} - {{ $json.daysSinceLastOrder }} gündür aktif değil\n\nCustomer success ekibi ile iletişime geçilsin.",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı Log",
+      "type": "n8n-nodes-base.code",
+      "position": [1650, 300],
+      "parameters": {
+        "jsCode": "// Tamamlandı logla\nconsole.log('Müşteri segmentasyonu tamamlandı:', new Date().toISOString());\nreturn [{ json: { status: 'completed', timestamp: new Date().toISOString() } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Günlük Trigger": { "output": [["Müşteri Verisi Çek", "main"]] },
+    "Müşteri Verisi Çek": { "output": [["CLV Hesaplama", "main"]] },
+    "CLV Hesaplama": { "output": [["AI Segmentasyon Analizi", "main"]] },
+    "AI Segmentasyon Analizi": { "output": [["Segment Güncelle", "main"]] },
+    "Segment Güncelle": { "output": [["Kampanya Tetikle", "main"]] },
+    "Kampanya Tetikle": {
+      "output": {
+        "champions": [["Champions Email", "main"]],
+        "loyal": [["Loyal Email", "main"]],
+        "at_risk": [["Win-back Email", "main"]],
+        "churned": [["Churn Bildirim", "main"]],
+        "default": [["Tamamlandı Log", "main"]]
+      }
+    },
+    "Champions Email": { "output": [["Tamamlandı Log", "main"]] },
+    "Loyal Email": { "output": [["Tamamlandı Log", "main"]] },
+    "Win-back Email": { "output": [["Tamamlandı Log", "main"]] },
+    "Churn Bildirim": { "output": [["Tamamlandı Log", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["kep", "musteri", "segmentasyon", "rfm", "clv", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "kep-ai-002-customer-segmentation"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "name": "ENOREP-AI-002: CLV Tahmini ve Churn Prevention",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Haftalık Churn Kontrol",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "week",
+              "weekday": "monday",
+              "hours": [9],
+              "minutes": [0]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-at-risk",
+      "name": "At Risk Müşterileri Bul",
+      "type": "n8n-nodes-base.postgres",
+      "position": [450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  c.id as customer_id,\n  c.email,\n  c.first_name,\n  c.last_order_date,\n  c.total_orders,\n  c.total_spent,\n  c.avg_order_value,\n  c.segment,\n  c.email_open_rate,\n  c.last_email_open,\n  DATE_PART('day', NOW() - c.last_order_date) as days_since_order,\n  DATE_PART('day', NOW() - c.last_email_open) as days_since_email_open\nFROM customers c\nWHERE c.last_order_date < NOW() - INTERVAL '30 days'\n  AND c.total_orders > 0\n  AND c.segment NOT IN ('CHURNED')\nORDER BY days_since_order DESC\nLIMIT 200",
+        "options": {}
+      }
+    },
+    {
+      "id": "clv-calculation",
+      "name": "CLV ve Churn Hesaplama",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// CLV ve churn risk hesaplaması\nconst customers = $input.all();\n\nconst result = customers.map(({ json }) => {\n  // Churn risk faktörleri\n  const daysSinceOrder = json.days_since_order || 0;\n  const daysSinceEmail = json.days_since_email || 999;\n  const emailOpenRate = json.email_open_rate || 0;\n  const totalOrders = json.total_orders || 0;\n  \n  // Risk skoru (0-100)\n  let riskScore = 0;\n  \n  // Recency (max 40 puan)\n  if (daysSinceOrder > 120) riskScore += 40;\n  else if (daysSinceOrder > 90) riskScore += 30;\n  else if (daysSinceOrder > 60) riskScore += 20;\n  else if (daysSinceOrder > 30) riskScore += 10;\n  \n  // Engagement (max 30 puan)\n  if (emailOpenRate < 0.1) riskScore += 30;\n  else if (emailOpenRate < 0.3) riskScore += 20;\n  else if (emailOpenRate < 0.5) riskScore += 10;\n  \n  // Frequency (max 30 puan - düşük frequency artırır risk)\n  if (totalOrders <= 1) riskScore += 30;\n  else if (totalOrders <= 3) riskScore += 20;\n  else if (totalOrders <= 5) riskScore += 10;\n  \n  // CLV tahmini (basit)\n  const avgOrderValue = json.avg_order_value || json.total_spent / Math.max(json.total_orders, 1);\n  const expectedFutureOrders = Math.max(0, 12 - daysSinceOrder / 30); // 12 ay içinde beklenen sipariş\n  const estimatedCLV = avgOrderValue * expectedFutureOrders * 0.3; // %30 marj\n  \n  // Risk seviyesi\n  let riskLevel = 'LOW';\n  if (riskScore >= 70) riskLevel = 'HIGH';\n  else if (riskScore >= 40) riskLevel = 'MEDIUM';\n  \n  // Önerilen aksiyon\n  let recommendedAction = 'WATCH';\n  if (riskScore >= 80) recommendedAction = 'IMMEDIATE_WINBACK';\n  else if (riskScore >= 60) recommendedAction = 'WINBACK_CAMPAIGN';\n  else if (riskScore >= 40) recommendedAction = 'REENGAGEMENT';\n  \n  return {\n    json: {\n      customerId: json.customer_id,\n      email: json.email,\n      firstName: json.first_name,\n      daysSinceOrder,\n      totalOrders: json.total_orders,\n      totalSpent: json.total_spent,\n      emailOpenRate,\n      riskScore: Math.min(100, riskScore),\n      riskLevel,\n      estimatedCLV: Math.round(estimatedCLV),\n      recommendedAction\n    }\n  };\n});\n\n// Yüksek risklileri filtrele\n return result.filter(r => r.json.riskScore >= 40).map(r => r);"
+      }
+    },
+    {
+      "id": "ai-strategy",
+      "name": "AI Kampanya Stratejisi",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [850, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen bir müşteri yaşam döngüsü yöneticisin. Churn risk taşıyan müşteriler için özelleştirilmiş geri kazanım stratejileri oluşturursun.",
+        "prompt": "Şu müşteri için churn prevention stratejisi oluştur:\n\n{{ $json }}\n\nMüşteri:\n- Ad: {{ $json.firstName }}\n- Risk Skoru: {{ $json.riskScore }}%\n- Risk Seviyesi: {{ $json.riskLevel }}\n- Toplam Sipariş: {{ $json.totalOrders }}\n- Toplam Harcama: ₺{{ $json.totalSpent }}\n- Tahmini CLV: ₺{{ $json.estimatedCLV }}\n\nÖnerilen Aksiyon: {{ $json.recommendedAction }}\n\nKampanya stratejisi oluştur:\n1. Hangi tür kampanya? (ödül, indirim, kişisel temas, etc)\n2. İndirim oranı veya ödül değeri\n3. İletişim kanalı\n4. Zamanlama\n\nJSON:\n{\n  \"campaignType\": \"...\",\n  \"discountPercent\": 0-30,\n  \"offerValue\": number,\n  \"channel\": \"email|sms|both\",\n  \"timing\": \"immediate|scheduled\",\n  \"personalMessage\": \"...\"\n}",
+        "options": {
+          "maxTokens": 600,
+          "temperature": 0.5
+        }
+      }
+    },
+    {
+      "id": "action-router",
+      "name": "Aksiyon Yönlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [1050, 300],
+      "parameters": {
+        "dataType": "string",
+        "valueComparison": "=",
+        "fallbackOutput": "default",
+        "rules": {
+          "rules": [
+            {
+              "name": "Acil",
+              "value": "IMMEDIATE_WINBACK",
+              "output": "immediate"
+            },
+            {
+              "name": "Winback",
+              "value": "WINBACK_CAMPAIGN",
+              "output": "winback"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "immediate-alert",
+      "name": "Acil Müdahale Bildirimi",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 100],
+      "parameters": {
+        "channel": "=#customer-success",
+        "text": "=🚨 *ACİL: Müşteri Kaybı Risk!*\n\n*Ad:* {{ $json.firstName }}\n*Email:* {{ $json.email }}\n*Risk Skoru:* {{ $json.riskScore }}%\n*Son Sipariş:* {{ $json.daysSinceOrder }} gün önce\n*Toplam Harcama:* ₺{{ $json.totalSpent }}\n\n*Önerilen:* {{ $json.campaignType }}\n*Değer:* %{{ $json.discountPercent }} indirim\n\nHemen aksiyon alın!",
+        "options": {}
+      }
+    },
+    {
+      "id": "create-campaign",
+      "name": "Kampanya Oluştur",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1450, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://enoprice-api.enoca.com/api/v1/campaigns",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.ENOPRICE_CLIENT_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ 'ChurnPrevention_' + $json.customerId }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.campaignType }}"
+            },
+            {
+              "name": "customerId",
+              "value": "={{ $json.customerId }}"
+            },
+            {
+              "name": "discountPercent",
+              "value": "={{ $json.discountPercent }}"
+            },
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.timing === 'immediate' ? 'ACTIVE' : 'SCHEDULED' }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "send-email",
+      "name": "Kişisel Email Gönder",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [1650, 300],
+      "parameters": {
+        "to": "={{ $json.email }}",
+        "subject": "={{ 'Sana özel bir teklifimiz var, ' + $json.firstName }}",
+        "body": "=<h2>Merhaba {{ $json.firstName }},</h2>\n\n<p>{{ $json.personalMessage || 'Seni özledik! Aradan çok zaman geçti ve sana özel bir teklifimiz var.' }}</p>\n\n<p>Şu anda <strong>%{{ $json.discountPercent }} indirim</strong> koduyla alışveriş yapabilirsin.</p>\n\n<p style=\"text-align: center;\">\n  <a href=\"https://enoca.com/?campaign=churn_{{ $json.customerId }}\"\n     style=\"background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;\">\n    Teklifimi Kullan\n  </a>\n</p>\n\n<p><small>Bu teklif 7 gün içinde geçerlidir.</small></p>",
+        "options": {}
+      }
+    },
+    {
+      "id": "update-customer",
+      "name": "Müşteriyi Güncelle",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1850, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE customers SET \n  churn_risk_score = {{ $json.riskScore }},\n  churn_risk_level = '{{ $json.riskLevel }}',\n  recommended_action = '{{ $json.recommendedAction }}',\n  campaign_sent = true,\n  updated_at = NOW()\nWHERE id = '{{ $json.customerId }}'",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [2050, 300],
+      "parameters": {
+        "jsCode": "console.log('Churn prevention kampanyası tamamlandı:', new Date().toISOString());\nreturn [{ json: { status: 'completed', processed: $input.count() } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Haftalık Churn Kontrol": { "output": [["At Risk Müşterileri Bul", "main"]] },
+    "At Risk Müşterileri Bul": { "output": [["CLV ve Churn Hesaplama", "main"]] },
+    "CLV ve Churn Hesaplama": { "output": [["AI Kampanya Stratejisi", "main"]] },
+    "AI Kampanya Stratejisi": { "output": [["Aksiyon Yönlendirme", "main"]] },
+    "Aksiyon Yönlendirme": {
+      "output": {
+        "immediate": [["Acil Müdahale Bildirimi", "main"], ["Kampanya Oluştur", "main"]],
+        "winback": [["Kampanya Oluştur", "main"]],
+        "default": [["Tamamlandı", "main"]]
+      }
+    },
+    "Acil Müdahale Bildirimi": { "output": [["Kampanya Oluştur", "main"]] },
+    "Kampanya Oluştur": { "output": [["Kişisel Email Gönder", "main"]] },
+    "Kişisel Email Gönder": { "output": [["Müşteriyi Güncelle", "main"]] },
+    "Müşteriyi Güncelle": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["enorep", "clv", "churn", "prevention", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "enorep-ai-002-clv-churn-prediction"
+  }
+}

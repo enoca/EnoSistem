@@ -1,0 +1,161 @@
+{
+  "name": "CONN-AI-001: Otomatik Ürün Eşleştirme",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Yeni Ürün Bildirimi",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "connector/product/new",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "id": "fetch-candidates",
+      "name": "Eşleşme Adayları",
+      "type": "n8n-nodes-base.postgres",
+      "position": [450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT id, sku, barcode, name, brand, category, price \nFROM products \nWHERE barcode = '{{ $json.input.barcode }}' \n   OR name ILIKE '%' || '{{ $json.input.name }}' || '%'\nLIMIT 10",
+        "options": {}
+      }
+    },
+    {
+      "id": "ai-matching",
+      "name": "AI Ürün Eşleştirme",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [650, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen bir ürün eşleştirme uzmanısın. İki ürünü karşılaştırarak eşleşme olasılığını hesaplarsın.",
+        "prompt": "Kaynak ürün:\n{{ $json.input }}\n\nEşleşme adayları:\n{{ $json.candidates }}\n\nHer aday için eşleşme skoru hesapla (0-100):\n- barcode tam eşleşmesi: +40 puan\n- name benzerliği: +30 puan\n- brand eşleşmesi: +15 puan\n- category eşleşmesi: +15 puan\n\nJSON formatında dön:\n{\n  \"matches\": [\n    { \"productId\": \"...\", \"score\": 0-100, \"confidence\": \"HIGH|MEDIUM|LOW\" }\n  ],\n  \"bestMatch\": { ... }\n}",
+        "options": {
+          "maxTokens": 600,
+          "temperature": 0.1
+        }
+      }
+    },
+    {
+      "id": "match-router",
+      "name": "Eşleşme Yönlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [850, 300],
+      "parameters": {
+        "dataType": "number",
+        "valueComparison": ">=",
+        "threshold": 95,
+        "fallbackOutput": "default",
+        "rules": {
+          "rules": [
+            {
+              "name": "Kesin Eşleşme (>=95)",
+              "value": 95,
+              "output": "exact"
+            },
+            {
+              "name": "AI Eşleşme (>=75)",
+              "value": 75,
+              "output": "ai_match"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "auto-link",
+      "name": "Otomatik Eşleştir",
+      "type": "n8n-nodes-base.code",
+      "position": [1050, 200],
+      "parameters": {
+        "jsCode": "// Otomatik eşleştirme\nconst result = $input.first().json;\n\nreturn [{\n  json: {\n    sourceProduct: result.input,\n    matchedProductId: result.bestMatch.productId,\n    matchScore: result.bestMatch.score,\n    confidence: result.bestMatch.confidence,\n    status: 'AUTO_LINKED',\n    linkedAt: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "update-connector",
+      "name": "Connector Güncelle",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1250, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://connector-api.enoca.com/v1/products/link",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.CONNECTOR_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sourceProductId",
+              "value": "={{ $json.sourceProduct.id }}"
+            },
+            {
+              "name": "targetProductId",
+              "value": "={{ $json.matchedProductId }}"
+            },
+            {
+              "name": "matchScore",
+              "value": "={{ $json.matchScore }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "manual-review",
+      "name": "Manuel İnceleme",
+      "type": "n8n-nodes-base.slack",
+      "position": [1050, 400],
+      "parameters": {
+        "channel": "=#product-matching",
+        "text": "=🔍 *Manuel Eşleştirme Gerekli*\n\n*Kaynak Ürün:* {{ $json.input.name }}\n*Barkod:* {{ $json.input.barcode }}\n*Marka:* {{ $json.input.brand }}\n\n*Eşleşme Adayları:*\n{{ $json.matches?.map(m => `• ID: ${m.productId} | Skor: ${m.score}%`).join('\\n') || 'Bulunamadı' }}\n\n<https://connector.enoca.com/matching|İncele ve Eşleştir>",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-result",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 300],
+      "parameters": {
+        "jsCode": "console.log('Ürün eşleştirme tamamlandı:', new Date().toISOString());\nreturn $input.all();"
+      }
+    }
+  ],
+  "connections": {
+    "Yeni Ürün Bildirimi": { "output": [["Eşleşme Adayları", "main"]] },
+    "Eşleşme Adayları": { "output": [["AI Ürün Eşleştirme", "main"]] },
+    "AI Ürün Eşleştirme": { "output": [["Eşleşme Yönlendirme", "main"]] },
+    "Eşleşme Yönlendirme": {
+      "output": {
+        "exact": [["Otomatik Eşleştir", "main"]],
+        "ai_match": [["Otomatik Eşleştir", "main"]],
+        "default": [["Manuel İnceleme", "main"]]
+      }
+    },
+    "Otomatik Eşleştir": { "output": [["Connector Güncelle", "main"]] },
+    "Connector Güncelle": { "output": [["Tamamlandı", "main"]] },
+    "Manuel İnceleme": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["connector", "ürün", "eşleştirme", "ai", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "conn-ai-001-product-matching"
+  }
+}

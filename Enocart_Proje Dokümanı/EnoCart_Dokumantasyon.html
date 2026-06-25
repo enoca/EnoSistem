@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnoCart - Akıllı Market Arabası ve Otomatik Teslim Sistemi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e40af;
+            --secondary: #7e3af2;
+            --accent: #0891b2;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --dark: #0f172a;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-800);
+            background: var(--gray-100);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--white);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .header .subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .badge-container {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Navigation */
+        .nav {
+            background: var(--white);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 1rem;
+            z-index: 100;
+        }
+
+        .nav ul {
+            display: flex;
+            gap: 0.5rem;
+            list-style: none;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: var(--gray-600);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .nav a:hover {
+            background: var(--gray-100);
+            color: var(--primary);
+        }
+
+        /* Section */
+        .section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            font-size: 1.75rem;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--primary);
+            display: inline-block;
+        }
+
+        .section h3 {
+            font-size: 1.25rem;
+            color: var(--gray-800);
+            margin: 1.5rem 0 1rem;
+        }
+
+        .section p {
+            margin-bottom: 1rem;
+            color: var(--gray-600);
+        }
+
+        /* Flow Diagram */
+        .flow-container {
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--white);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s;
+        }
+
+        .flow-step:hover {
+            transform: translateX(5px);
+        }
+
+        .flow-step .number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .flow-step .content h4 {
+            font-size: 1rem;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .flow-step .content p {
+            font-size: 0.875rem;
+            margin: 0;
+            color: var(--gray-600);
+        }
+
+        /* Module Grid */
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .module-card {
+            background: var(--gray-100);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--gray-200);
+            transition: all 0.3s;
+        }
+
+        .module-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(26, 86, 219, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .module-card .module-number {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .module-card h4 {
+            font-size: 1.1rem;
+            color: var(--dark);
+            margin: 0.5rem 0;
+        }
+
+        .module-card p {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin: 0;
+        }
+
+        /* Requirements Table */
+        .req-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+
+        .req-table th {
+            background: var(--primary);
+            color: var(--white);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .req-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: top;
+        }
+
+        .req-table tr:hover td {
+            background: var(--gray-100);
+        }
+
+        .priority {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .priority.high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority.medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .phase {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .phase.mvp {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .phase.faz1 {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        /* Architecture */
+        .arch-diagram {
+            background: var(--dark);
+            color: var(--gray-300);
+            border-radius: 12px;
+            padding: 2rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        .arch-layer {
+            margin-bottom: 1.5rem;
+        }
+
+        .arch-layer-title {
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .arch-components {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .arch-component {
+            background: rgba(255,255,255,0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Benefits */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .benefit-card {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--white) 100%);
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .benefit-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .benefit-card h4 {
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .benefit-card p {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin: 0;
+        }
+
+        /* Future Phases */
+        .future-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .future-item {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: var(--white);
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .kpi-card {
+            background: var(--gray-100);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .kpi-card .value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .kpi-card .label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark);
+            color: var(--gray-400);
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .nav ul {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>EnoCart</h1>
+        <p class="subtitle">Akıllı Market Arabası ve Otomatik Teslim Sistemi — IoT tabanlı perakende çözümü ile kasada bekleme sona eriyor</p>
+        <div class="badge-container">
+            <span class="badge">IoT</span>
+            <span class="badge">Event-Driven</span>
+            <span class="badge">Real-time</span>
+            <span class="badge">PCI-DSS</span>
+            <span class="badge">KVKK</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav class="nav">
+            <ul>
+                <li><a href="#overview">Genel Bakış</a></li>
+                <li><a href="#flow">Süreç Akışı</a></li>
+                <li><a href="#modules">Modüller</a></li>
+                <li><a href="#requirements">Gereksinimler</a></li>
+                <li><a href="#architecture">Mimari</a></li>
+                <li><a href="#security">Güvenlik</a></li>
+                <li><a href="#benefits">Faydalar</a></li>
+            </ul>
+        </nav>
+
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+            <h2>📋 Proje Genel Bakış</h2>
+
+            <p>EnoCart, süpermarket ve hipermarketlerde müşterilerin alışveriş deneyimini kökten dönüştüren bir IoT tabanlı akıllı alışveriş sistemidir. Geleneksel kasada bekleme ve poşet taşıma sorunlarını ortadan kaldırarak, mağaza içi alışverişi daha hızlı, daha güvenli ve daha verimli hale getirir.</p>
+
+            <h3>Sistem Özellikleri</h3>
+            <ul>
+                <li>✅ <strong>Akıllı Araba:</strong> Load cell, RFID ve barkod kamera sensörleri ile ürün otomatik tanıma</li>
+                <li>✅ <strong>Gerçek Zamanlı Doğrulama:</strong> Sensor Fusion Engine ile ağırlık ve barkod eşleştirme</li>
+                <li>✅ <strong>Arka Plan Hazırlama:</strong> Müşteri alışveriş yaparken siparişler toplanmaya başlar</li>
+                <li>✅ <strong>Konveyör Teslimat:</strong> Ödeme sonrası QR kod ile otomatik paket teslimi</li>
+                <li>✅ <strong>Çoklu Ödeme:</strong> Kart, NFC, Apple Pay, Google Pay, sadakat puanları</li>
+            </ul>
+
+            <h3>Hedef Metrikler</h3>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="value">&lt;200ms</div>
+                    <div class="label">Sensör Validasyon</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="value">&lt;15sn</div>
+                    <div class="label">Konveyör Teslimat</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="value">1,000</div>
+                    <div class="label">Eşzamanlı Araba</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="value">99.95%</div>
+                    <div class="label">Sistem Uptime</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Flow Section -->
+        <section id="flow" class="section">
+            <h2>🔄 Müşteri Süreç Akışı</h2>
+
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="number">1</div>
+                    <div class="content">
+                        <h4>Giriş ve Kimlik Doğrulama</h4>
+                        <p>Müşteri mobil uygulamadaki QR kodu okutarak akıllı arabayla sepet eşleştirir. Keycloak token doğrulaması yapılır.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">2</div>
+                    <div class="content">
+                        <h4>Alışveriş Başlangıcı</h4>
+                        <p>Müşteri ürünleri raftan alır, akıllı arabaya bırakır. Sensörler ürünü otomatik tanır ve sepete ekler.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">3</div>
+                    <div class="content">
+                        <h4>Gerçek Zamanlı Sepet Yönetimi</h4>
+                        <p>Ürün ekleme/çıkarma anlık olarak yapılır. Kampanya ve indirimler otomatik uygulanır, toplam tutar sürekli güncellenir.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">4</div>
+                    <div class="content">
+                        <h4>Arka Plan Toplama</h4>
+                        <p>Sepete eklenen her ürün eş zamanlı olarak toplama görevlisinin ekranına düşer. Depo personeli ürünleri toplar ve paketler.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">5</div>
+                    <div class="content">
+                        <h4>Ödeme</h4>
+                        <p>Müşteri araba ekranından ödemeye geçer. Kart, NFC, Apple/Google Pay veya sadakat puanları ile ödeme yapılır.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">6</div>
+                    <div class="content">
+                        <h4>Teslimat Kodu</h4>
+                        <p>Ödeme başarılı olduğunda benzersiz Teslimat QR kodu üretilir. Kod 30 dakika geçerlidir.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">7</div>
+                    <div class="content">
+                        <h4>Çıkış ve Teslim Noktası</h4>
+                        <p>Müşteri çıkış alanına gider, akıllı arabayı teslim rayına kilitler ve QR kodu okutur.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">8</div>
+                    <div class="content">
+                        <h4>Otomatik Teslimat</h4>
+                        <p>QR doğrulandıktan sonra konveyör sistemi devreye girer ve paket müşteriye otomatik teslim edilir.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">9</div>
+                    <div class="content">
+                        <h4>Teslim Alma ve Fiş</h4>
+                        <p>Müşteri paketini teslim alır. Sistem teslimatı tamamlar ve dijital e-arşiv faturası gönderir.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modules Section -->
+        <section id="modules" class="section">
+            <h2>🧩 Modüler Mimari (14 Modül)</h2>
+
+            <div class="module-grid">
+                <div class="module-card">
+                    <div class="module-number">Modül 01</div>
+                    <h4>Ürün ve Katalog Yönetimi</h4>
+                    <p>SKU, barkod, RFID etiket ID'leri ve ağırlık/tolerans tanımlarının yönetimi. ERP entegrasyonu.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 02</div>
+                    <h4>Sepet ve Checkout</h4>
+                    <p>Anlık sepet toplamı, uygulanan indirimler ve ödeme tutarı yönetimi. <200ms güncelleme.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 03</div>
+                    <h4>Sipariş Yönetimi (OMS-Lite)</h4>
+                    <p>Sipariş statü yönetimi, arka depo hazırlama kuyruğu ve faturalandırma süreçleri.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 04</div>
+                    <h4>IoT Akıllı Araba Yönetimi</h4>
+                    <p>Donanım durumları, batarya seviyeleri, Wi-Fi sinyal gücü ve arıza takibi. %20 altı otomatik bakım.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 05</div>
+                    <h4>Sensor Fusion Engine</h4>
+                    <p>Load cell + RFID + barkod kamera verilerinin Kalman filtresi ile birleştirilmesi. <200ms validasyon.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 06</div>
+                    <h4>Toplama ve Paketleme</h4>
+                    <p>Picker App ile depo görevlisi yönetimi. Soğuk zincir ve kırılgan kuralları. <500ms güncelleme.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 07</div>
+                    <h4>Konveyör Teslimat</h4>
+                    <p>PLC entegrasyonu ile paket sevk. FIFO dağıtım, acil durdurma protokolleri. <100ms PLC gecikmesi.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 08</div>
+                    <h4>Müşteri Yönetimi</h4>
+                    <p>Profil, sadakat puanları, kayıtlı ödeme yöntemleri ve KVKK açık rıza yönetimi.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 09</div>
+                    <h4>Ödeme ve Dijital Cüzdan</h4>
+                    <p>Stripe/Iyzico entegrasyonu. PCI-DSS Level 1 uyumlu tokenization. <2.5sn provizyon.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 10</div>
+                    <h4>Kampanya Motoru</h4>
+                    <p>Dinamik indirim hesaplama. X al Y öde, sepet indirimi kuralları. En yüksek indirim otomatik seçim.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 11</div>
+                    <h4>Yetkilendirme (IAM)</h4>
+                    <p>Keycloak IAM altyapısı. OAuth 2.0/OIDC, JWT token (15dk), IoT için mTLS sertifikaları.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 12</div>
+                    <h4>Backoffice Panel</h4>
+                    <p>Operasyonel izleme, gelir/gider durumu, araba sayısı, sepet kilitlenme oranları, konveyör doluluk.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 13</div>
+                    <h4>Entegrasyon Hub</h4>
+                    <p>SAP ERP, PLC konveyör, kargo API, CRM sistemleri. Dead-Letter Queue yönetimi.</p>
+                </div>
+                <div class="module-card">
+                    <div class="module-number">Modül 14</div>
+                    <h4>Raporlama ve Analitik</h4>
+                    <p>Sensör sapma, toplama performansı, SLA raporları. BI entegrasyonu (Snowflake/BigQuery).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Requirements Section -->
+        <section id="requirements" class="section">
+            <h2>📐 Temel Gereksinimler</h2>
+
+            <h3>Fonksiyonel Gereksinimler (Özet)</h3>
+            <table class="req-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Açıklama</th>
+                        <th>Öncelik</th>
+                        <th>Faz</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>FR-001</td>
+                        <td>Müşteri QR kod ile akıllı araba eşleştirme</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-002</td>
+                        <td>Ürün ağırlığı load cell ile doğrulama (%98 hassasiyet)</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-003</td>
+                        <td>Sepet içeriği ve toplam tutar gerçek zamanlı görüntüleme</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-004</td>
+                        <td>Çoklu ödeme yöntemi (Kart, NFC, Apple/Google Pay)</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-005</td>
+                        <td>Arka alandaki toplayıcıya anlık sipariş iş emri</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-006</td>
+                        <td>QR kod sonrası PLC konveyör sevk tetikleme</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-007</td>
+                        <td>IoT araba batarya izleme ve düşük batarya yönetimi</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-008</td>
+                        <td>Dinamik kampanya ve indirim hesaplama</td>
+                        <td><span class="priority medium">Orta</span></td>
+                        <td><span class="phase faz1">Faz 1</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-012</td>
+                        <td>Tüm kullanıcı ve IoT hareketleri denetim loglama</td>
+                        <td><span class="priority high">Yüksek</span></td>
+                        <td><span class="phase mvp">MVP</span></td>
+                    </tr>
+                    <tr>
+                        <td>FR-014</td>
+                        <td>Offline modda alışverişe devam edebilme</td>
+                        <td><span class="priority medium">Orta</span></td>
+                        <td><span class="phase faz1">Faz 1</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Fonksiyonel Olmayan Gereksinimler</h3>
+            <table class="req-table">
+                <thead>
+                    <tr>
+                        <th>Metrik</th>
+                        <th>Hedef</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Sayfa Yüklenme (LCP)</td><td><strong>&lt; 1.5 saniye</strong></td></tr>
+                    <tr><td>Sensör API Yanıt (P95)</td><td><strong>&lt; 150 ms</strong></td></tr>
+                    <tr><td>Eşzamanlı Kapasite</td><td><strong>1,000 araba / 50,000 seans</strong></td></tr>
+                    <tr><td>Veri Şifreleme</td><td><strong>AES-256 + TLS 1.3</strong></td></tr>
+                    <tr><td>Sistem Uptime</td><td><strong>%99.95 (High Availability)</strong></td></tr>
+                    <tr><td>PCI-DSS Uyum</td><td><strong>Level 1</strong></td></tr>
+                    <tr><td>KVKK Talepleri</td><td><strong>&lt; 48 saat</strong></td></tr>
+                    <tr><td>Load Cell Hassasiyet</td><td><strong>±5 gram (50kg kapasitede)</strong></td></tr>
+                    <tr><td>PLC Gecikme</td><td><strong>&lt; 100 ms</strong></td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Architecture Section -->
+        <section id="architecture" class="section">
+            <h2>🏗️ Teknik Mimari</h2>
+
+            <p>EnoCart platformu, IoT donanımlarının yüksek hızlı telemetri akışlarını sisteme yük getirmeden işleyebilmesi ve ERP sistemleriyle gevşek bağlı (loose-coupled) çalışabilmesi için <strong>Event-Driven Modular Monolith</strong> mimariyle tasarlanmıştır.</p>
+
+            <div class="arch-diagram">
+                <div class="arch-layer">
+                    <div class="arch-layer-title">IoT Donanım Katmanı</div>
+                    <div class="arch-components">
+                        <span class="arch-component">Load Cells (GPIO/Analog)</span>
+                        <span class="arch-component">RFID Anteni</span>
+                        <span class="arch-component">Barkod Kamera</span>
+                        <span class="arch-component">Dokunmatik Ekran (React)</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Edge Gateway (Mağaza İçi)</div>
+                    <div class="arch-components">
+                        <span class="arch-component">MQTT Broker (EMQX)</span>
+                        <span class="arch-component">Kalman Filtre (Sensör Temizleme)</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">API Gateway & BFF</div>
+                    <div class="arch-components">
+                        <span class="arch-component">Spring Cloud Gateway</span>
+                        <span class="arch-component">Keycloak IAM</span>
+                        <span class="arch-component">Backend for Frontend</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Çekirdek Servisler</div>
+                    <div class="arch-components">
+                        <span class="arch-component">Katalog Servisi</span>
+                        <span class="arch-component">Sepet Servisi</span>
+                        <span class="arch-component">OMS-Lite</span>
+                        <span class="arch-component">Sensor Fusion</span>
+                        <span class="arch-component">Konveyör Kontrol</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Veri Katmanı</div>
+                    <div class="arch-components">
+                        <span class="arch-component">Apache Kafka (Event Bus)</span>
+                        <span class="arch-component">Redis (Cache)</span>
+                        <span class="arch-component">PostgreSQL (Master/Slave)</span>
+                    </div>
+                </div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Dış Entegrasyonlar</div>
+                    <div class="arch-components">
+                        <span class="arch-component">PLC Konveyör (Modbus/TCP-IP)</span>
+                        <span class="arch-component">Stripe / Iyzico</span>
+                        <span class="arch-component">SAP ERP</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Veritabanı ER Modeli (Özet)</h3>
+            <p><strong>Ana Varlıklar:</strong> Customer, Cart, IoT_Cart, Product, Cart_Item, Order, Order_Item, Payment, Conveyor_Dock, Shipment</p>
+            <p><strong>İlişkiler:</strong> Customer → Cart → Cart_Item → Product | Order → Payment | Order → Shipment → Conveyor_Dock</p>
+        </section>
+
+        <!-- Security Section -->
+        <section id="security" class="section">
+            <h2>🔒 Güvenlik ve Uyumluluk</h2>
+
+            <h3>Kimlik Doğrulama ve Yetkilendirme</h3>
+            <ul>
+                <li><strong>OAuth 2.0 / OIDC:</strong> Authorization Code Flow ile kullanıcı girişleri</li>
+                <li><strong>JWT Token:</strong> 15 dakika geçerli, Refresh Token ile yenileme</li>
+                <li><strong>mTLS:</strong> IoT cihazlar için mutual TLS ve SSL sertifikaları</li>
+                <li><strong>Keycloak IAM:</strong> Merkezi rol ve yetki yönetimi</li>
+            </ul>
+
+            <h3>KVKK ve GDPR Uyumu</h3>
+            <ul>
+                <li><strong>AES-256:</strong> Müşteri adresleri, telefon, isim, e-posta şifreleme</li>
+                <li><strong>Data Masking:</strong> Backoffice'de maskelenmiş müşteri verileri</li>
+                <li><strong>Unutulma Hakkı:</strong> 48 saat içinde anonimleştirme</li>
+                <li><strong>Audit Log:</strong> Append-only denetim veritabanı</li>
+            </ul>
+
+            <h3>PCI-DSS Level 1</h3>
+            <ul>
+                <li>Kart verileri <strong>hiçbir şekilde</strong> yerel sunucularda saklanmaz</li>
+                <li>Ödemeler Stripe/Iyzico altyapısında tokenization ile yapılır</li>
+                <li>3D Secure doğrulama katmanı</li>
+                <li>Idempotency Key ile çift tahsilat önleme</li>
+            </ul>
+        </section>
+
+        <!-- Benefits Section -->
+        <section id="benefits" class="section">
+            <h2>💡 Beklenen Faydalar</h2>
+
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="icon">⏱️</div>
+                    <h4>Kasada Bekleme Yok</h4>
+                    <p>Müşteriler ödemeyi araba ekranından tamamlar ve direkt çıkışa yönelir.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">🏋️</div>
+                    <h4>Ürün Taşıma Yükü Azalır</h4>
+                    <p>Paketler konveyörle teslim noktasına otomatik taşınır.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">🛡️</div>
+                    <h4>Hırsızlık ve Kayıp Azaltılır</h4>
+                    <p>Sensor Fusion Engine ile ağırlık/barkod eşleşmeleri sürekli doğrulanır.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">📊</div>
+                    <h4>Müşteri Verisi Toplanır</h4>
+                    <p>Alışveriş davranışları analiz edilerek kişiselleştirilmiş kampanyalar sunulur.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">💰</div>
+                    <h4>Kasa Personeli Tasarrufu</h4>
+                    <p>EnoCart sayesinde kasiyer ihtiyacı azalır, işletme maliyet düşer.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon">📉</div>
+                    <h4>Sepet Terk Oranı Düşer</h4>
+                    <p>Hızlı ve kolay checkout deneyimi ile alışveriş tamamlama oranı artar.</p>
+                </div>
+            </div>
+
+            <h3>Gelecek Fazlar (AR-GE Faz 2)</h3>
+            <div class="future-list">
+                <div class="future-item">🤖 Yapay zekâ ile ürün önerileri</div>
+                <div class="future-item">🎙️ Sesli alışveriş asistanı</div>
+                <div class="future-item">🚗 Otonom takip eden araba</div>
+                <div class="future-item">🦾 Robotik toplama sistemi</div>
+                <div class="future-item">🚙 Araç bagajına teslimat</div>
+                <div class="future-item">🏠 Eve teslimat entegrasyonu</div>
+                <div class="future-item">📈 Dinamik kampanya ve kişiselleştirilmiş fiyatlama</div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="footer">
+        <p>EnoCart — Akıllı Market Arabası ve Otomatik Teslim Sistemi | Dokümantasyon v1.0</p>
+    </footer>
+</body>
+</html>

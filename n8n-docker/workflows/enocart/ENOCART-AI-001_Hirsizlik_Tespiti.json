@@ -1,0 +1,175 @@
+{
+  "name": "ENOCART-AI-001: Hırsızlık/Sahtekarlık Tespiti",
+  "nodes": [
+    {
+      "id": "mqtt-trigger",
+      "name": "EnoCart MQTT Listener",
+      "type": "n8n-nodes-base.mqtt",
+      "position": [250, 300],
+      "parameters": {
+        "brokerUrl": "=mqtt://{{ $env.ENOCART_MQTT_BROKER }}",
+        "clientId": "=n8n_enocart_monitor",
+        "topics": ["enocart/session/+/sensors"],
+        "qos": 1,
+        "options": {
+          "jsonOutput": true
+        }
+      }
+    },
+    {
+      "id": "parse-data",
+      "name": "Veri Parse Et",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 300],
+      "parameters": {
+        "jsCode": "// Sensör verilerini parse et\nconst mqttData = $input.first().json;\n\n// Topic: enocart/session/{sessionId}/sensors\nconst topicParts = mqttData.topic?.split('/') || [];\nconst sessionId = topicParts[2] || mqttData.sessionId;\n\nconst sensorData = {\n  sessionId,\n  timestamp: mqttData.timestamp || new Date().toISOString(),\n  barcode: mqttData.barcode,\n  weight: mqttData.weight || 0, // gram\n  scanInterval: mqttData.scanInterval || 0, // ms\n  cameraEvent: mqttData.cameraEvent,\n  productsScanned: mqttData.productsScanned || [],\n  sessionDuration: mqttData.sessionDuration || 0, // sn\n  paymentMethod: mqttData.paymentMethod,\n  customerId: mqttData.customerId\n};\n\nreturn [{ json: sensorData }];"
+      }
+    },
+    {
+      "id": "anomaly-check",
+      "name": "Anomali Kontrol",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// Anomali tespiti\nconst data = $input.first().json;\n\nconst anomalies = [];\n\n// 1. Ağırlık uyuşmazlığı (ürün beklenen ağırlık ile tarama anı ağırlık farkı)\nif (data.expectedWeight && data.weight) {\n  const weightDiff = Math.abs(data.weight - data.expectedWeight);\n  if (weightDiff > 50) { // 50g tolerans\n    anomalies.push({\n      type: 'WEIGHT_MISMATCH',\n      severity: 'HIGH',\n      confidence: 0.85,\n      details: `Beklenen: ${data.expectedWeight}g, Tarama: ${data.weight}g, Fark: ${weightDiff}g`,\n      description: 'Ağırlık uyuşmazlığı tespit edildi'\n    });\n  }\n}\n\n// 2. Hızlı tarama (normalde ürün başı ~3-5 saniye)\nif (data.scanInterval < 1500) { // 1.5 sn'den az\n  anomalies.push({\n    type: 'FAST_SCANNING',\n    severity: 'MEDIUM',\n    confidence: 0.7,\n    details: `Tarama aralığı: ${data.scanInterval}ms`,\n    description: 'Normalden çok hızlı tarama'\n  });\n}\n\n// 3. Ardışık tarama atlaması (barkod okutulmadan geçme)\nif (data.scannedCount && data.physicalCount) {\n  const missRate = (data.physicalCount - data.scannedCount) / data.physicalCount;\n  if (missRate > 0.15) { // %15'ten fazla kaçırma\n    anomalies.push({\n      type: 'SCAN_SKIP',\n      severity: 'HIGH',\n      confidence: 0.9,\n      details: `Taranan: ${data.scannedCount}, Fiziksel: ${data.physicalCount}`,\n      description: 'Çok sayıda ürün taranmadan geçilmiş'\n    });\n  }\n}\n\n// 4. Bilinmeyen ürün (sistemde kayıtlı olmayan barkod)\nif (data.unknownBarcodes && data.unknownBarcodes.length > 0) {\n  anomalies.push({\n    type: 'UNKNOWN_PRODUCT',\n    severity: 'MEDIUM',\n    confidence: 0.6,\n    details: `Bilinmeyen barkodlar: ${data.unknownBarcodes.join(', ')}`,\n    description: 'Sistemde kayıtlı olmayan ürün tespit edildi'\n  });\n}\n\n// 5. Şüpheli pozisyon (kamera analizi)\nif (data.cameraAlert) {\n  anomalies.push({\n    type: 'POSITION_ALERT',\n    severity: 'HIGH',\n    confidence: 0.8,\n    details: data.cameraAlert,\n    description: 'Şüpheli pozisyon davranışı'\n  });\n}\n\n// Toplam risk skoru hesapla\nconst totalRisk = anomalies.reduce((sum, a) => sum + (a.severity === 'HIGH' ? 30 : a.severity === 'MEDIUM' ? 15 : 5) * a.confidence, 0);\nconst riskScore = Math.min(100, Math.round(totalRisk));\n\nlet riskLevel = 'LOW';\nif (riskScore >= 70) riskLevel = 'CRITICAL';\nelse if (riskScore >= 50) riskLevel = 'HIGH';\nelse if (riskScore >= 30) riskLevel = 'MEDIUM';\n\nreturn [{\n  json: {\n    sessionId: data.sessionId,\n    riskScore,\n    riskLevel,\n    anomalies,\n    anomalyCount: anomalies.length,\n    customerId: data.customerId,\n    timestamp: data.timestamp,\n    action: riskLevel === 'CRITICAL' ? 'BLOCK' : riskLevel === 'HIGH' ? 'ALERT' : riskLevel === 'MEDIUM' ? 'WARN' : 'OK'\n  }\n}];"
+      }
+    },
+    {
+      "id": "risk-router",
+      "name": "Risk Yönlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [850, 300],
+      "parameters": {
+        "dataType": "string",
+        "valueComparison": "=",
+        "fallbackOutput": "normal",
+        "rules": {
+          "rules": [
+            {
+              "name": "Kritik",
+              "value": "BLOCK",
+              "output": "block"
+            },
+            {
+              "name": "Yüksek",
+              "value": "ALERT",
+              "output": "alert"
+            },
+            {
+              "name": "Orta",
+              "value": "WARN",
+              "output": "warn"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "block-session",
+      "name": "Oturumu Blokele",
+      "type": "n8n-nodes-base.mqtt",
+      "position": [1050, 100],
+      "parameters": {
+        "brokerUrl": "=mqtt://{{ $env.ENOCART_MQTT_BROKER }}",
+        "topic": "=enocart/session/{{ $json.sessionId }}/control",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "BLOCK"
+            },
+            {
+              "name": "reason",
+              "value": "={{ 'Yüksek risk skoru: ' + $json.riskScore }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "critical-alert",
+      "name": "Kritik Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [1050, 200],
+      "parameters": {
+        "channel": "=#enocart-security",
+        "text": "=🚨 *ENOCART GÜVENLİK ALERT*\n\n*Oturum ID:* {{ $json.sessionId }}\n*Risk Skoru:* {{ $json.riskScore }}/100\n*Seviye:* KRITIK - OTURUM BLOKE EDILDI\n\n*Anomaliler:*\n{{ $json.anomalies?.map(a => `• ${a.type}: ${a.details}`).join('\\n') || 'Yok' }}\n\nMüşteri ID: {{ $json.customerId }}\nZaman: {{ $json.timestamp }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "high-alert",
+      "name": "Yüksek Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [1050, 400],
+      "parameters": {
+        "channel": "=#enocart-monitoring",
+        "text": "=⚠️ *ENOCART UYARI*\n\n*Oturum:* {{ $json.sessionId }}\n*Risk Skoru:* {{ $json.riskScore }}\n*Seviye:* YÜKSEK\n\n{{ $json.anomalies?.map(a => `• ${a.type}`).join('\\n') || 'İnceleme gerekiyor' }}\n\nGörüntü kaydı kontrol edilsin.",
+        "options": {}
+      }
+    },
+    {
+      "id": "warn-notify",
+      "name": "Uyarı Bildirimi",
+      "type": "n8n-nodes-base.code",
+      "position": [1050, 600],
+      "parameters": {
+        "jsCode": "// Uyarı kaydı oluştur\nreturn [{\n  json: {\n    sessionId: $input.first().json.sessionId,\n    riskScore: $input.first().json.riskScore,\n    riskLevel: $input.first().json.riskLevel,\n    action: 'LOGGED',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "record-evidence",
+      "name": "Kanıt Kaydet",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1250, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO enocart_security_logs \n(session_id, customer_id, risk_score, risk_level, anomalies, action_taken, created_at)\nVALUES \n('{{ $json.sessionId }}', '{{ $json.customerId }}', {{ $json.riskScore }}, '{{ $json.riskLevel }}', '{{ JSON.stringify($json.anomalies).replace(/'/g, \"''\") }}', '{{ $json.action }}', NOW())\nRETURNING id",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 300],
+      "parameters": {
+        "jsCode": "// Tamamlandı\nreturn [{ json: { status: 'processed', sessionId: $input.first().json.sessionId } }];"
+      }
+    }
+  ],
+  "connections": {
+    "EnoCart MQTT Listener": { "output": [["Veri Parse Et", "main"]] },
+    "Veri Parse Et": { "output": [["Anomali Kontrol", "main"]] },
+    "Anomali Kontrol": { "output": [["Risk Yönlendirme", "main"]] },
+    "Risk Yönlendirme": {
+      "output": {
+        "block": [["Oturumu Blokele", "main"], ["Kritik Alert", "main"], ["Kanıt Kaydet", "main"]],
+        "alert": [["Yüksek Alert", "main"], ["Kanıt Kaydet", "main"]],
+        "warn": [["Uyarı Bildirimi", "main"], ["Kanıt Kaydet", "main"]],
+        "normal": [["Kanıt Kaydet", "main"]]
+      }
+    },
+    "Oturumu Blokele": { "output": [["Kritik Alert", "main"]] },
+    "Kritik Alert": { "output": [["Kanıt Kaydet", "main"]] },
+    "Yüksek Alert": { "output": [["Kanıt Kaydet", "main"]] },
+    "Uyarı Bildirimi": { "output": [["Kanıt Kaydet", "main"]] },
+    "Kanıt Kaydet": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["enocart", "güvenlik", "hırsızlık", "iot", "mqtt", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "enocart-ai-001-theft-detection"
+  }
+}

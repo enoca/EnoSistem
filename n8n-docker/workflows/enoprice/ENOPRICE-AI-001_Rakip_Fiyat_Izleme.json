@@ -1,0 +1,222 @@
+{
+  "name": "ENOPRICE-AI-001: Rakip Fiyat İzleme",
+  "nodes": [
+    {
+      "id": "cron-trigger",
+      "name": "Saatlik Fiyat Kontrolü",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hours": [1]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-products",
+      "name": "Hedef Ürünleri Çek",
+      "type": "n8n-nodes-base.postgres",
+      "position": [450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.id, p.name, p.sku, p.cost_price, pt.value as current_price, \n       pt.warehouse_id, w.name as warehouse_name\nFROM products p\nJOIN price_table pt ON p.id = pt.product_id\nJOIN warehouses w ON pt.warehouse_id = w.id\nWHERE p.active = true AND pt.active = true\nLIMIT 100",
+        "options": {}
+      }
+    },
+    {
+      "id": "scrape-trendyol",
+      "name": "Trendyol Fiyatları",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://scraper-service.enoca.com/scrape",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "trendyol"
+            },
+            {
+              "name": "products",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "scrape-hepsiburada",
+      "name": "Hepsiburada Fiyatları",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://scraper-service.enoca.com/scrape",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "hepsiburada"
+            },
+            {
+              "name": "products",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "scrape-amazon",
+      "name": "Amazon Fiyatları",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 500],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://scraper-service.enoca.com/scrape",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "amazon"
+            },
+            {
+              "name": "products",
+              "value": "={{ $json }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "aggregate-data",
+      "name": "Veri Birleştirme",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// Rakip fiyat verilerini birleştir\nconst ourProducts = $input.items.find(i => i.json.source === 'products')?.json;\nconst trendyol = $input.items.find(i => i.json.source === 'trendyol')?.json || [];\nconst hepsiburada = $input.items.find(i => i.json.source === 'hepsiburada')?.json || [];\nconst amazon = $input.items.find(i => i.json.source === 'amazon')?.json || [];\n\nconst aggregated = ourProducts.map(product => {\n  const sku = product.sku;\n  \n  const tPrice = trendyol.find(t => t.sku === sku)?.price;\n  const hPrice = hepsiburada.find(h => h.sku === sku)?.price;\n  const aPrice = amazon.find(a => a.sku === sku)?.price;\n  \n  const competitorPrices = [tPrice, hPrice, aPrice].filter(p => p != null);\n  const minCompetitorPrice = Math.min(...competitorPrices);\n  const avgCompetitorPrice = competitorPrices.reduce((a, b) => a + b, 0) / competitorPrices.length;\n  \n  return {\n    json: {\n      productId: product.id,\n      sku: product.sku,\n      productName: product.name,\n      ourPrice: product.current_price,\n      costPrice: product.cost_price,\n      minCompetitorPrice,\n      avgCompetitorPrice,\n      competitorCount: competitorPrices.length,\n      priceGap: product.current_price - minCompetitorPrice,\n      priceGapPercent: ((product.current_price - minCompetitorPrice) / minCompetitorPrice) * 100,\n      lastUpdated: new Date().toISOString()\n    }\n  };\n});\n\nreturn aggregated;"
+      }
+    },
+    {
+      "id": "ai-analysis",
+      "name": "AI Fiyat Analizi",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [850, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen bir fiyatlandırma analistisin. Rakip fiyatlarını analiz ederek actionable öneriler sunarsın.",
+        "prompt": "Şu ürün için rakip fiyat analizi yap:\n\n{{ $json }}\n\nAnaliz et:\n1. Fiyat avantajımız var mı?\n2. Fiyat güncellemesi gerekli mi?\n3. Ne kadar değişiklik önerilir?\n\nJSON formatında dön:\n{\n  \"needsUpdate\": true/false,\n  \"suggestedPrice\": number,\n  \"reasoning\": \"...\",\n  \"alert\": \"HIGH/MEDIUM/LOW/null\"\n}",
+        "options": {
+          "maxTokens": 400,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "alert-router",
+      "name": "Alert Yönlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [1050, 300],
+      "parameters": {
+        "dataType": "string",
+        "valueComparison": "=",
+        "fallbackOutput": "normal",
+        "rules": {
+          "rules": [
+            {
+              "name": "Yüksek Öncelik",
+              "value": "HIGH",
+              "output": "high"
+            },
+            {
+              "name": "Orta Öncelik",
+              "value": "MEDIUM",
+              "output": "medium"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "high-alert",
+      "name": "Yüksek Öncelik Bildirimi",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 100],
+      "parameters": {
+        "channel": "=#price-alerts",
+        "text": "=🚨 *ÖNEMLİ: Fiyat Güncellemesi Gerekli*\n\n*Ürün:* {{ $json.productName }}\n*SKU:* {{ $json.sku }}\n*Mevcut Fiyat:* ₺{{ $json.ourPrice }}\n*En Düşük Rakip:* ₺{{ $json.minCompetitorPrice }}\n*Fark:* %{{ $json.priceGapPercent?.toFixed(1) }}\n*Önerilen:* ₺{{ $json.suggestedPrice }}\n\nSebep: {{ $json.reasoning }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "medium-alert",
+      "name": "Orta Öncelik Bildirimi",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 300],
+      "parameters": {
+        "channel": "=#price-monitoring",
+        "text": "=📊 *Fiyat İzleme*\n\n*Ürün:* {{ $json.productName }}\n*Rakip Min:* ₺{{ $json.minCompetitorPrice }}\n*Mevcut:* ₺{{ $json.ourPrice }}\n\n{{ $json.reasoning }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "store-results",
+      "name": "Sonuçları Kaydet",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO price_monitoring (product_id, sku, our_price, min_competitor_price, avg_competitor_price, alert_level, analyzed_at)\nVALUES ('{{ $json.productId }}', '{{ $json.sku }}', {{ $json.ourPrice }}, {{ $json.minCompetitorPrice }}, {{ $json.avgCompetitorPrice }}, '{{ $json.alert || 'NONE' }}', NOW())\nON CONFLICT (product_id) DO UPDATE SET\n  our_price = EXCLUDED.our_price,\n  min_competitor_price = EXCLUDED.min_competitor_price,\n  alert_level = EXCLUDED.alert_level,\n  analyzed_at = NOW()",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1650, 300],
+      "parameters": {
+        "jsCode": "console.log('Rakip fiyat izleme tamamlandı:', new Date().toISOString());\nreturn [{ json: { status: 'completed', analyzed: $input.count() } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Saatlik Fiyat Kontrolü": { "output": [["Hedef Ürünleri Çek", "main"]] },
+    "Hedef Ürünleri Çek": { "output": [["Trendyol Fiyatları", "main"], ["Hepsiburada Fiyatları", "main"], ["Amazon Fiyatları", "main"]] },
+    "Trendyol Fiyatları": { "output": [["Veri Birleştirme", "main"]] },
+    "Hepsiburada Fiyatları": { "output": [["Veri Birleştirme", "main"]] },
+    "Amazon Fiyatları": { "output": [["Veri Birleştirme", "main"]] },
+    "Veri Birleştirme": { "output": [["AI Fiyat Analizi", "main"]] },
+    "AI Fiyat Analizi": { "output": [["Alert Yönlendirme", "main"]] },
+    "Alert Yönlendirme": {
+      "output": {
+        "high": [["Yüksek Öncelik Bildirimi", "main"]],
+        "medium": [["Orta Öncelik Bildirimi", "main"]],
+        "normal": [["Sonuçları Kaydet", "main"]]
+      }
+    },
+    "Yüksek Öncelik Bildirimi": { "output": [["Sonuçları Kaydet", "main"]] },
+    "Orta Öncelik Bildirimi": { "output": [["Sonuçları Kaydet", "main"]] },
+    "Sonuçları Kaydet": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["enoprice", "fiyat", "rakip", "izleme", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "enoprice-ai-001-competitor-monitoring"
+  }
+}

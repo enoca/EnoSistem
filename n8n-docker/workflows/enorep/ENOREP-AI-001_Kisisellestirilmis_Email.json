@@ -1,0 +1,139 @@
+{
+  "name": "ENOREP-AI-001: Kişiselleştirilmiş Email",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Sepet Terk Tetikleyicisi",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hours": [6, 12, 18, 22]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-abandoned",
+      "name": "Sepet Terk Edenleri Bul",
+      "type": "n8n-nodes-base.postgres",
+      "position": [450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  c.id as customer_id,\n  c.email,\n  c.first_name,\n  c.segment,\n  c.clv,\n  string_agg(p.name, ', ') as abandoned_products,\n  COUNT(ci.id) as item_count,\n  SUM(ci.price * ci.quantity) as cart_value,\n  MAX(c.created_at) as last_activity\nFROM carts c\nJOIN cart_items ci ON c.id = ci.cart_id\nJOIN products p ON ci.product_id = p.id\nWHERE c.status = 'ABANDONED'\n  AND c.updated_at >= NOW() - INTERVAL '24 hours'\n  AND c.email IS NOT NULL\nGROUP BY c.id, c.email, c.first_name, c.segment, c.clv",
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-recommendations",
+      "name": "AI Önerileri Çek",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [650, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://enorep-api.enoca.com/v1/recommend/cart-recovery",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.ENOREP_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "customerId",
+              "value": "={{ $json.customer_id }}"
+            },
+            {
+              "name": "abandonedProducts",
+              "value": "={{ $json.abandoned_products }}"
+            },
+            {
+              "name": "cartValue",
+              "value": "={{ $json.cart_value }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ai-email-generate",
+      "name": "AI Email Oluştur",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [850, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen enoca™ için profesyonel bir email copywriting uzmanısın. Kişiselleştirilmiş, etkili ve satış odaklı email içerikleri üretirsin.",
+        "prompt": "Şu müşteri için kişiselleştirilmiş sepet hatırlatma emaili oluştur:\n\nMüşteri:\n- İsim: {{ $json.first_name }}\n- Email: {{ $json.email }}\n- Segment: {{ $json.segment }}\n- CLV: ₺{{ $json.clv }}\n\nSepet:\n- Ürünler: {{ $json.abandoned_products }}\n- Değer: ₺{{ $json.cart_value }}\n\nAI Önerileri:\n{{ $json.recommendations }}\n\nEmail oluştur:\n1. Konu satırı (max 60 karakter)\n2. Ön yazı (kişisel, sıcak)\n3. Ana içerik (ürün vurgusu, scarcity, CTA)\n4. Footer\n\nFormat:\n{\n  \"subject\": \"...\",\n  \"preheader\": \"...\",\n  \"body\": \"...\",\n  \"cta\": \"...\"\n}",
+        "options": {
+          "maxTokens": 1000,
+          "temperature": 0.7
+        }
+      }
+    },
+    {
+      "id": "send-email",
+      "name": "Email Gönder",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [1050, 300],
+      "parameters": {
+        "to": "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "body": "=<h2>Merhaba {{ $json.first_name }},</h2>\n<p>{{ $json.body }}</p>\n<br>\n<p style=\"text-align: center;\">\n  <a href=\"https://enoca.com/cart/recover?token={{ $json.recovery_token }}\" \n     style=\"background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;\">\n    {{ $json.cta }}\n  </a>\n</p>\n<br>\n<p><small>Bu email {{ $json.abandoned_products }} ürünü için gönderildi. Sepetinizi tamamlamak için 48 saat içinde tıklayın.</small></p>",
+        "options": {
+          "fromName": "enoca™",
+          "replyTo": "destek@enoca.com"
+        }
+      }
+    },
+    {
+      "id": "update-status",
+      "name": "Durumu Güncelle",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1250, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE carts \nSET status = 'EMAIL_SENT', \n    email_sent_at = NOW(),\n    email_subject = '{{ $json.subject.replace(/'/g, \"''\") }}'\nWHERE id = '{{ $json.cart_id }}'",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 300],
+      "parameters": {
+        "jsCode": "console.log('Sepet hatırlatma emailleri gönderildi:', new Date().toISOString());\nreturn [{ json: { status: 'completed', sent: $input.count() } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Sepet Terk Tetikleyicisi": { "output": [["Sepet Terk Edenleri Bul", "main"]] },
+    "Sepet Terk Edenleri Bul": { "output": [["AI Önerileri Çek", "main"]] },
+    "AI Önerileri Çek": { "output": [["AI Email Oluştur", "main"]] },
+    "AI Email Oluştur": { "output": [["Email Gönder", "main"]] },
+    "Email Gönder": { "output": [["Durumu Güncelle", "main"]] },
+    "Durumu Güncelle": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["enorep", "email", "kişiselleştirme", "sepet-terk", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "enorep-ai-001-cart-recovery-email"
+  }
+}

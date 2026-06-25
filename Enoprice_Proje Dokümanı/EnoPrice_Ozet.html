@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnoPrice - Enoca Dinamik Fiyatlama Sistemi</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        header { text-align: center; padding: 4rem 0; background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-bottom: 1px solid #334155; }
+        header h1 { font-size: 3rem; background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
+        header p { font-size: 1.25rem; color: #94a3b8; max-width: 600px; margin: 0 auto; }
+        .badge { display: inline-block; background: #1e40af; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; margin-top: 1rem; }
+        section { margin: 3rem 0; }
+        h2 { font-size: 1.75rem; color: #38bdf8; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #1e40af; }
+        h3 { font-size: 1.25rem; color: #a78bfa; margin: 1.5rem 0 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; }
+        .card h4 { color: #38bdf8; margin-bottom: 0.75rem; font-size: 1.1rem; }
+        .card ul { list-style: none; padding-left: 0; }
+        .card li { padding: 0.5rem 0; border-bottom: 1px solid #334155; }
+        .card li:last-child { border-bottom: none; }
+        .tag { display: inline-block; background: #7c3aed; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; margin: 0.25rem; }
+        .tag.mvp { background: #059669; }
+        .tag.faz1 { background: #d97706; }
+        .tech-stack { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin: 2rem 0; }
+        .tech-item { background: #1e293b; padding: 1rem 1.5rem; border-radius: 8px; border: 1px solid #334155; text-align: center; }
+        .tech-item strong { display: block; color: #38bdf8; margin-bottom: 0.25rem; }
+        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; margin: 1rem 0; }
+        th { background: #1e40af; padding: 1rem; text-align: left; }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid #334155; }
+        tr:last-child td { border-bottom: none; }
+        .module-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-left: 4px solid #38bdf8; }
+        .priority-high { color: #ef4444; }
+        .priority-med { color: #f59e0b; }
+        .priority-low { color: #22c55e; }
+        .architecture-box { background: #0f172a; border: 2px dashed #38bdf8; border-radius: 12px; padding: 2rem; text-align: center; margin: 2rem 0; }
+        .flow { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; }
+        .flow-title { color: #38bdf8; font-weight: bold; margin-bottom: 0.5rem; }
+        .persons { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .person { background: #1e293b; padding: 1rem; border-radius: 8px; border: 1px solid #334155; }
+        .person strong { color: #a78bfa; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>EnoPrice</h1>
+            <p>Enoca Dinamik Fiyatlama ve Rekabet Analiz Sistemi</p>
+            <span class="badge">JHipster 8.11 | Spring Boot 3.4 | Java 21 | React/Next.js</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <section>
+            <h2>Proje Hakkında</h2>
+            <div class="card">
+                <p>EnoPrice, Enoca tarafından geliştirilen, yapay zeka destekli, Java JHipster tabanlı modern bir dinamik fiyatlama sistemidir. E-ticaret firmalarının ürün fiyatlarını stok durumu, rakip fiyatlar, sezon etkisi, geçmiş satışlar ve kampanya performansı gibi birçok parametreye göre otomatik ve gerçek zamanlı olarak belirlemesini sağlar.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Temel Amaçlar</h2>
+            <div class="grid">
+                <div class="card"><h4>Rekabetçi Fiyat Analizi</h4><p>Rakip analizine dayalı anlık fiyat önerileri sunmak</p></div>
+                <div class="card"><h4>Kampanya Otomasyonu</h4><p>Kampanya etkilerini ölçümleyerek otomatik kampanya planlaması yapmak</p></div>
+                <div class="card"><h4>Kâr Maksimizasyonu</h4><p>Fiyat ve satış verilerini işleyerek kâr maksimizasyonu sağlamak</p></div>
+                <div class="card"><h4>Manuel Yük Azaltma</h4><p>Fiyatlama süreçlerindeki manuel yükleri azaltmak</p></div>
+                <div class="card"><h4>AI Destekli Sistem</h4><p>Yapay zeka ve makine öğrenmesi algoritmalarıyla sürekli gelişen bir sistem kurmak</p></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Teknoloji Stack</h2>
+            <div class="tech-stack">
+                <div class="tech-item"><strong>Backend</strong>Java 21 + Spring Boot 3.4</div>
+                <div class="tech-item"><strong>Frontend</strong>Next.js (React/TypeScript)</div>
+                <div class="tech-item"><strong>Database</strong>PostgreSQL 16</div>
+                <div class="tech-item"><strong>Search</strong>Elasticsearch 8.11</div>
+                <div class="tech-item"><strong>AI</strong>Google Gemini API</div>
+                <div class="tech-item"><strong>Scheduler</strong>JobRunr 7.x</div>
+                <div class="tech-item"><strong>Migration</strong>Liquibase 4.25</div>
+                <div class="tech-item"><strong>Auth</strong>Keycloak SSO + JWT</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Modül Yapısı</h2>
+            <div class="grid">
+                <div class="card module-card"><h4>Ürün Yönetimi</h4><p>Ürün kartları, barkod, marka ve kategori kırılımlarının hiyerarşik yönetimi</p><span class="tag mvp">MVP</span></div>
+                <div class="card module-card"><h4>Depo ve Stok Yönetimi</h4><p>Çoklu depo tanımları ve ürünlerin depo bazlı stok miktarlarının anlık izlenmesi</p><span class="tag mvp">MVP</span></div>
+                <div class="card module-card"><h4>Fiyat Yönetimi</h4><p>Depo bazlı aktif satış fiyatları, maliyet fiyatları ve geçmiş fiyat değişimlerinin yönetimi</p><span class="tag mvp">MVP</span></div>
+                <div class="card module-card"><h4>AI Fiyat Önerileri</h4><p>Google Gemini API ile stok, maliyet ve rakip verilerine göre akıllı fiyat önerileri</p><span class="tag faz1">Faz 1</span></div>
+                <div class="card module-card"><h4>Kampanya Yönetimi</h4><p>İndirim, promosyon, 3 al 2 öde, n. ürüne indirim gibi esnek kampanyaların planlanması</p><span class="tag mvp">MVP</span></div>
+                <div class="card module-card"><h4>Raporlama ve Analitik</h4><p>Fiyat güncellemeleri, kampanya performansları, prompt geçmişi ve satış analizleri</p><span class="tag mvp">MVP</span></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Veritabanı Yapısı</h2>
+            <table>
+                <tr><th>Tablo</th><th>Açıklama</th></tr>
+                <tr><td>PRODUCT</td><td>Ürün kartları (name, code, rakipFiyat, costPrice, active)</td></tr>
+                <tr><td>PRICE_TABLE</td><td>Depo bazlı fiyatlar (value, warehouse, product_id)</td></tr>
+                <tr><td>PRICE_HISTORY</td><td>Fiyat değişim logları (value, old_value, warehouse)</td></tr>
+                <tr><td>STOCK</td><td>Depo bazlı stok miktarları (value, warehouse)</td></tr>
+                <tr><td>CAMPAIGN</td><td>Kampanyalar (name, type, description, active)</td></tr>
+                <tr><td>CAMPAIGN_RATING</td><td>Kampanya başarı skorları (rating, campaignName)</td></tr>
+                <tr><td>ORDER_HISTORY</td><td>Satış geçmişi (product, warehouse, count)</td></tr>
+                <tr><td>PROMPT_HISTORY</td><td>AI prompt ve yanıtları (prompt_text, response_text)</td></tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>Kullanıcı Rolleri</h2>
+            <table>
+                <tr><th>Rol</th><th>Yetkiler</th></tr>
+                <tr><td>Admin</td><td>Tüm menüler, kullanıcı yönetimi, sistem ayarları</td></tr>
+                <tr><td>Price Analyst</td><td>Ürün/kategori/depo yönetimi, rakip fiyat turları, Excel yükleme</td></tr>
+                <tr><td>Campaign Manager</td><td>Kampanya oluşturma, pasifize etme, AI öneri ekranı</td></tr>
+                <tr><td>Auditor/Viewer</td><td>Salt okunur raporlama ekranları</td></tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>Ekip</h2>
+            <div class="persons">
+                <div class="person"><strong>Caner Çin</strong><br>Backend mimarisi (Java + JHipster)</div>
+                <div class="person"><strong>Yusuf & Cafer</strong><br>PostgreSQL veritabanı yapısı</div>
+                <div class="person"><strong>Çağrı</strong><br>Web servis çağrıları analizi</div>
+                <div class="person"><strong>Genel</strong><br>Google Gemini AI entegrasyonu</div>
+                <div class="person"><strong>Osman & Mihriban</strong><br>Frontend kurulumu ve tasarım</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>AI Özellikleri</h2>
+            <div class="grid">
+                <div class="card"><h4>Fiyat Öneri Motoru</h4><ul><li>Maliyet, stok ve rakip fiyatları analiz eder</li><li>Gemini API ile en karlı fiyatı gerekçesiyle önerir</li><li>Kullanıcı onayıyla fiyat güncellenir</li></ul></div>
+                <div class="card"><h4>Kampanya Öneri Motoru</h4><ul><li>3 strateji: Dengeli, Agresif, Koruyucu</li><li>Dış etki sinyalleri (hava, özel günler)</li><li>Sezonsal çıkarımlar ve gelecek fırsatlar</li></ul></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Mimari</h2>
+            <div class="architecture-box">
+                <p><strong>Modüler Monolit (Modular Monolith)</strong></p>
+                <p style="color: #94a3b8; margin-top: 0.5rem;">JHipster 8.11 + Spring Boot 3.4. Modüller gelecekte mikroservis olarak ayrılabilir.</p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

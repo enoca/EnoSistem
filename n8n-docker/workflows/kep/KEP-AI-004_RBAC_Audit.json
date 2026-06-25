@@ -1,0 +1,186 @@
+{
+  "name": "KEP-AI-004: RBAC Audit ve Güvenlik",
+  "nodes": [
+    {
+      "id": "cron-trigger",
+      "name": "Günlük Audit",
+      "type": "n8n-nodes-base.cron",
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "day",
+              "hours": [1],
+              "minutes": [0]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch-logs",
+      "name": "Audit Logları Çek",
+      "type": "n8n-nodes-base.postgres",
+      "position": [450, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  al.user_id,\n  u.email,\n  u.role,\n  al.action,\n  al.resource,\n  al.ip_address,\n  al.user_agent,\n  al.timestamp,\n  CASE \n    WHEN al.timestamp < NOW() - INTERVAL '8 hours' THEN 'OFF_HOURS'\n    ELSE 'BUSINESS_HOURS'\n  END as time_category\nFROM audit_logs al\nJOIN users u ON al.user_id = u.id\nWHERE al.timestamp >= NOW() - INTERVAL '24 hours'\nORDER BY al.timestamp DESC",
+        "options": {}
+      }
+    },
+    {
+      "id": "analyze-access",
+      "name": "Erişim Analizi",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "// Erişim kalıbı analizi\nconst logs = $input.all();\nconst logData = logs.map(l => l.json);\n\n// Anomali tespiti\nconst anomalyRules = [\n  {\n    name: 'OFF_HOURS_ACCESS',\n    check: (log) => log.time_category === 'OFF_HOURS' && ['DELETE', 'EXPORT', 'ADMIN'].includes(log.action),\n    severity: 'HIGH',\n    message: 'Mesai dışı hassas işlem'\n  },\n  {\n    name: 'FAILED_LOGIN_BURST',\n    check: (log) => log.action === 'LOGIN_FAILED',\n    severity: 'MEDIUM'\n  },\n  {\n    name: 'BULK_EXPORT',\n    check: (log) => log.action === 'EXPORT' && log.resource === 'users',\n    severity: 'HIGH',\n    message: 'Toplu kullanıcı export'\n  },\n  {\n    name: 'SENSITIVE_ACCESS',\n    check: (log) => log.action === 'READ' && log.resource.includes('payment'),\n    severity: 'MEDIUM'\n  }\n];\n\nconst anomalies = [];\nconst failedLogins = {};\n\nlogData.forEach(log => {\n  anomalyRules.forEach(rule => {\n    if (rule.check(log)) {\n      anomalies.push({\n        userId: log.user_id,\n        email: log.email,\n        role: log.role,\n        anomalyType: rule.name,\n        severity: rule.severity,\n        message: rule.message || `${rule.name} tespit edildi`,\n        timestamp: log.timestamp,\n        ipAddress: log.ip_address,\n        action: log.action,\n        resource: log.resource\n      });\n    }\n  });\n  \n  if (log.action === 'LOGIN_FAILED') {\n    failedLogins[log.user_id] = (failedLogins[log.user_id] || 0) + 1;\n  }\n});\n\n// Fazla başarısız giriş kontrolü\nObject.keys(failedLogins).forEach(userId => {\n  if (failedLogins[userId] >= 5) {\n    const userLogs = logData.filter(l => l.user_id === userId);\n    anomalies.push({\n      userId,\n      email: userLogs[0]?.email,\n      role: userLogs[0]?.role,\n      anomalyType: 'EXCESSIVE_FAILED_LOGINS',\n      severity: 'CRITICAL',\n      message: `${failedLogins[userId]} başarısız giriş denemesi`,\n      failedAttempts: failedLogins[userId],\n      action: 'LOCK_ACCOUNT'\n    });\n  }\n});\n\nif (anomalies.length === 0) {\n  return [{ json: { message: 'No anomalies detected', totalLogs: logData.length } }];\n}\n\nreturn anomalies.map(a => ({ json: a }));"
+      }
+    },
+    {
+      "id": "ai-risk-analysis",
+      "name": "AI Risk Değerlendirmesi",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [850, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "systemMessage": "Sen bir güvenlik analistisin. Kullanıcı erişim kalıplarını analiz ederek risk skorları ve aksiyon önerileri sunarsın.",
+        "prompt": "Şu güvenlik anomalilerini değerlendir:\n\n{{ $json }}\n\nHer anomali için:\n1. Risk seviyesi (0-100)\n2. Otomatik aksiyon gerekli mi?\n3. İnsan incelemesi gereken konular\n\nJSON formatında dön.",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "risk-router",
+      "name": "Risk Yönlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [1050, 300],
+      "parameters": {
+        "dataType": "number",
+        "valueComparison": ">",
+        "threshold": 70,
+        "fallbackOutput": "default",
+        "rules": {
+          "rules": [
+            {
+              "name": "Kritik (>70)",
+              "value": 70,
+              "output": "critical"
+            },
+            {
+              "name": "Yüksek (40-70)",
+              "value": 40,
+              "output": "high"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "critical-alert",
+      "name": "Kritik Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 100],
+      "parameters": {
+        "channel": "=#security-alerts",
+        "text": "=🚨 *KRİTİK GÜVENLİK UYARISI*\n\n*Kullanıcı:* {{ $json.email }}\n*Rol:* {{ $json.role }}\n*Anomali:* {{ $json.anomalyType }}\n*Mesaj:* {{ $json.message }}\n*IP:* {{ $json.ipAddress }}\n*Zaman:* {{ $json.timestamp }}\n\n⚡ Derhal müdahale gerekli!",
+        "options": {}
+      }
+    },
+    {
+      "id": "high-alert",
+      "name": "Yüksek Risk Alert",
+      "type": "n8n-nodes-base.slack",
+      "position": [1250, 300],
+      "parameters": {
+        "channel": "=#security-alerts",
+        "text": "=⚠️ *GÜVENLİK UYARISI*\n\n*Kullanıcı:* {{ $json.email }}\n*Anomali:* {{ $json.anomalyType }}\n*Mesaj:* {{ $json.message }}\n\nİnceleme gerekiyor.",
+        "options": {}
+      }
+    },
+    {
+      "id": "lock-account",
+      "name": "Hesap Kilitleme",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1450, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://kep-api.enoca.com/v1/users/{{ $json.userId }}/lock",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.KEP_API_KEY }}"
+            }
+          ]
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "reason",
+              "value": "={{ $json.message }}"
+            },
+            {
+              "name": "lockedBy",
+              "value": "=n8n-rbac-audit"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "create-incident",
+      "name": "Olay Kaydı Oluştur",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1650, 100],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO security_incidents (user_id, anomaly_type, severity, message, ip_address, status, created_at)\nVALUES ('{{ $json.userId }}', '{{ $json.anomalyType }}', '{{ $json.severity }}', '{{ $json.message }}', '{{ $json.ipAddress }}', 'OPEN', NOW())\nRETURNING id",
+        "options": {}
+      }
+    },
+    {
+      "id": "log-completion",
+      "name": "Tamamlandı",
+      "type": "n8n-nodes-base.code",
+      "position": [1850, 300],
+      "parameters": {
+        "jsCode": "console.log('RBAC audit tamamlandı:', new Date().toISOString());\nreturn [{ json: { status: 'completed' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Günlük Audit": { "output": [["Audit Logları Çek", "main"]] },
+    "Audit Logları Çek": { "output": [["Erişim Analizi", "main"]] },
+    "Erişim Analizi": { "output": [["AI Risk Değerlendirmesi", "main"]] },
+    "AI Risk Değerlendirmesi": { "output": [["Risk Yönlendirme", "main"]] },
+    "Risk Yönlendirme": {
+      "output": {
+        "critical": [["Kritik Alert", "main"], ["Hesap Kilitleme", "main"], ["Olay Kaydı Oluştur", "main"]],
+        "high": [["Yüksek Risk Alert", "main"]],
+        "default": [["Tamamlandı", "main"]]
+      }
+    },
+    "Kritik Alert": { "output": [["Hesap Kilitleme", "main"]] },
+    "Hesap Kilitleme": { "output": [["Olay Kaydı Oluştur", "main"]] },
+    "Olay Kaydı Oluştur": { "output": [["Tamamlandı", "main"]] },
+    "Yüksek Risk Alert": { "output": [["Tamamlandı", "main"]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": ["kep", "güvenlik", "rbac", "audit", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "kep-ai-004-rbac-audit"
+  }
+}

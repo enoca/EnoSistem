@@ -1,0 +1,192 @@
+{
+  "name": "KEP-AI-001: Akıllı Sipariş İşleme",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kep/siparis/yeni",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": false
+        }
+      }
+    },
+    {
+      "id": "validate-data",
+      "name": "Veri Doğrulama",
+      "type": "n8n-nodes-base.code",
+      "position": [450, 300],
+      "parameters": {
+        "jsCode": "// Sipariş validation\nconst siparis = $input.first().json.body;\n\nconst validation = {\n  gecerli: !!siparis.musteriId && !!siparis.urunler && siparis.urunler.length > 0,\n  urunSayisi: siparis.urunler?.length || 0,\n  toplamTutar: siparis.toplamTutar || 0,\n  hatalar: []\n};\n\nif (!siparis.musteriId) validation.hatalar.push('Müşteri ID eksik');\nif (!siparis.urunler || siparis.urunler.length === 0) validation.hatalar.push('Ürün listesi boş');\nif (!siparis.toplamTutar || siparis.toplamTutar <= 0) validation.hatalar.push('Geçersiz tutar');\n\nreturn [{ json: { siparis, validation } }];"
+      }
+    },
+    {
+      "id": "ai-risk-analysis",
+      "name": "AI Risk Analizi",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [650, 300],
+      "parameters": {
+        "modelType": "gemini",
+        "model": "gemini-2.0-flash",
+        "systemMessage": "Sen enoca™ KEP platformu için bir e-ticaret sipariş risk analiz uzmanısın. Her siparişi analiz ederek potansiyel riskleri tespit et ve risk skorları ver. Çıktını JSON formatında ver.",
+        "prompt": "Şu siparişi analiz et ve risk skorunu hesapla:\n\nSipariş Detayları:\n- Müşteri ID: {{ $json.siparis.musteriId }}\n- Ürün Sayısı: {{ $json.siparis.urunler?.length || 0 }}\n- Toplam Tutar: ₺{{ $json.siparis.toplamTutar || 0 }}\n\nRisk faktörlerini değerlendir:\n1. Miktar anomalisi (normal: 1-10 adet)\n2. Fiyat tutarsızlığı (piyasa ortalamasına göre)\n3. Müşteri geçmişi (yeni müşteri mi?)\n\nJSON formatında dön:\n{\n  \"riskScore\": 0-100,\n  \"riskLevel\": \"DÜŞÜK\" | \"ORTA\" | \"YÜKSEK\",\n  \"riskFactors\": [{ \"factor\": \"...\", \"severity\": \"HIGH|MEDIUM|LOW\", \"description\": \"...\" }],\n  \"action\": \"AUTO_APPROVE\" | \"MANUAL_REVIEW\" | \"REJECT\"\n}",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      }
+    },
+    {
+      "id": "risk-router",
+      "name": "Risk Skoru Değerlendirme",
+      "type": "n8n-nodes-base.switch",
+      "position": [850, 300],
+      "parameters": {
+        "dataType": "number",
+        "valueComparison": ">",
+        "threshold": 70,
+        "fallbackOutput": "default",
+        "rules": {
+          "rules": [
+            {
+              "name": "Yüksek Risk (>70)",
+              "value": 70,
+              "output": "high"
+            },
+            {
+              "name": "Orta Risk (30-70)",
+              "value": 30,
+              "output": "medium"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "auto-approve",
+      "name": "Otomatik Onay",
+      "type": "n8n-nodes-base.code",
+      "position": [1050, 200],
+      "parameters": {
+        "jsCode": "// Otomatik onay işlemleri\nconst siparis = $input.first().json.siparis;\nconst riskResult = $input.first().json;\n\nreturn [{\n  json: {\n    orderId: siparis.id || `ORD_${Date.now()}`,\n    status: 'APPROVED',\n    riskScore: riskResult.riskScore,\n    approvedAt: new Date().toISOString(),\n    message: 'Sipariş otomatik olarak onaylandı'\n  }\n}];"
+      }
+    },
+    {
+      "id": "manual-review",
+      "name": "Manuel İnceleme",
+      "type": "n8n-nodes-base.slack",
+      "position": [1050, 400],
+      "parameters": {
+        "channel": "=#n8n-alerts",
+        "text": "=⚠️ *Manuel İnceleme Gerekli*\n\nSipariş ID: {{ $json.siparis?.id }}\nRisk Skoru: {{ $json.riskScore }}\nToplam Tutar: ₺{{ $json.siparis?.toplamTutar }}\n\n*Risk Faktörleri:*\n{{ $json.riskFactors?.map(f => `• ${f.factor}: ${f.severity}`).join('\\n') || 'Yok' }}\n\n🔗 <https://kep.enoca.com/orders/{{ $json.siparis?.id }}|Siparişi İncele>",
+        "options": {}
+      }
+    },
+    {
+      "id": "reject-order",
+      "name": "Sipariş Red",
+      "type": "n8n-nodes-base.code",
+      "position": [1050, 600],
+      "parameters": {
+        "jsCode": "// Sipariş red işlemleri\nconst siparis = $input.first().json.siparis;\n\nreturn [{\n  json: {\n    orderId: siparis.id,\n    status: 'REJECTED',\n    rejectedAt: new Date().toISOString(),\n    reason: 'Yüksek risk skoru nedeniyle reddedildi'\n  }\n}];"
+      }
+    },
+    {
+      "id": "update-kep",
+      "name": "KEP Durum Güncelleme",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1250, 300],
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://kep-api.enoca.com/v1/orders/{{ $json.orderId }}/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "apiKey",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.KEP_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "riskScore",
+              "value": "={{ $json.riskScore }}"
+            },
+            {
+              "name": "updatedAt",
+              "value": "={{ $json.approvedAt || $json.rejectedAt }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "log-result",
+      "name": "Sonucu Logla",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 300],
+      "parameters": {
+        "jsCode": "// Sonucu logla\nconst result = $input.first().json;\n\nconsole.log('=== Sipariş İşleme Sonucu ===');\nconsole.log('Order ID:', result.orderId);\nconsole.log('Status:', result.status);\nconsole.log('Time:', result.approvedAt || result.rejectedAt);\n\nreturn [{ json: result }];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "output": [["Veri Doğrulama", "main"]]
+    },
+    "Veri Doğrulama": {
+      "output": [["AI Risk Analizi", "main"]]
+    },
+    "AI Risk Analizi": {
+      "output": [["Risk Skoru Değerlendirme", "main"]]
+    },
+    "Risk Skoru Değerlendirme": {
+      "output": {
+        "high": [["Sipariş Red", "main"]],
+        "medium": [["Manuel İnceleme", "main"]],
+        "default": [["Otomatik Onay", "main"]]
+      }
+    },
+    "Otomatik Onay": {
+      "output": [["KEP Durum Güncelleme", "main"]]
+    },
+    "Manuel İnceleme": {
+      "output": [["KEP Durum Güncelleme", "main"]]
+    },
+    "Sipariş Red": {
+      "output": [["KEP Durum Güncelleme", "main"]]
+    },
+    "KEP Durum Güncelleme": {
+      "output": [["Sonucu Logla", "main"]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["kep", "siparis", "ai", "risk-analysis", "otomasyon"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "templateId": "kep-ai-001-smart-order-processing"
+  }
+}
