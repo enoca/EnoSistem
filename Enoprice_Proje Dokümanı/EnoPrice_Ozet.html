@@ -41,9 +41,13 @@
         .persons { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
         .person { background: #1e293b; padding: 1rem; border-radius: 8px; border: 1px solid #334155; }
         .person strong { color: #a78bfa; }
+        .back-home { position: fixed; top: 1rem; left: 1rem; z-index: 1000; display: inline-flex; align-items: center; gap: 0.5rem; background: #1e293b; color: #38bdf8; padding: 0.75rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 1px solid #334155; transition: all 0.2s; }
+        .back-home:hover { background: #273549; transform: translateX(-4px); }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
+    <a href="../../index.html" class="back-home"><i class="fas fa-arrow-left"></i> Ana Sayfa</a>
     <header>
         <div class="container">
             <h1>EnoPrice</h1>
