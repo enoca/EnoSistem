@@ -28,3 +28,9 @@ logs/
 n8n-docker/.n8n/
 n8n-docker/postgres_data/
 n8n-docker/redis_data/
+
+# n8n scripts dependencies
+n8n-docker/scripts/node_modules/
+
+# Review tooling output
+.review-packages/
