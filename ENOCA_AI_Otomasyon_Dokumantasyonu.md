@@ -1,7 +1,7 @@
 # enoca™ AI Otomasyon Sistemi Dokümantasyonu
 
-**Versiyon:** 1.0  
-**Tarih:** 25 Haziran 2026  
+**Versiyon:** 1.1  
+**Tarih:** 6 Temmuz 2026  
 **Platform:** n8n + AI Agents  
 **Hazırlayan:** enoca™ Analiz ve AR-GE Ekibi
 
