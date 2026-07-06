@@ -123,7 +123,6 @@ services:
       - enoca_network
     deploy:
       replicas: 0
-      condition: "${N8N_WORKER_ENABLED:-false}"
 
   # Optional: Prometheus for monitoring
   prometheus:
