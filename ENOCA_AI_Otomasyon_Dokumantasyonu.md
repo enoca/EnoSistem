@@ -2851,11 +2851,11 @@ alerts:
 1. **n8n Documentation**: https://docs.n8n.io/
 2. **LangChain Agent Documentation**: https://docs.langchain.com/
 3. **Google Gemini API**: https://ai.google.dev/
-4. **enoca KEP API Docs**: (internal)
-5. **enoca Connector Docs**: (internal)
-6. **enoca EnoPrice Docs**: (internal)
-7. **enoca EnoRep Docs**: (internal)
-8. **enoca EnoCart Docs**: (internal)
+4. **enoca KEP API Docs**: [KEP Proje Özeti](KEP_Proje%20Dokümanı/ENOCA-KEP-Proje-Ozeti.html)
+5. **enoca Connector Docs**: [Connector Proje Dokümanı](Connector_Proje%20Dokümanı/enoca_connector_sunum.html)
+6. **enoca EnoPrice Docs**: [EnoPrice Proje Özeti](Enoprice_Proje%20Dokümanı/EnoPrice_Ozet.html)
+7. **enoca EnoRep Docs**: [EnoRep Proje Raporu](EnoRep_Proje%20Dokümanı/EnoRep_Proje_Raporu.html)
+8. **enoca EnoCart Docs**: [EnoCart Dokümantasyonu](Enocart_Proje%20Dokümanı/EnoCart_Dokumantasyon.html)
 
 ### 14.3 Template Koleksiyonu
 
