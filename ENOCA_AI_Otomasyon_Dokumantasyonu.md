@@ -5,6 +5,13 @@
 **Platform:** n8n + AI Agents  
 **Hazırlayan:** enoca™ Analiz ve AR-GE Ekibi
 
+**Versiyon Geçmişi**
+
+| Versiyon | Tarih | Değişiklikler | Yazar |
+|----------|-------|---------------|-------|
+| 1.0 | 2026-06-25 | İlk sürüm: 32 AI otomasyon senaryosu, mimari ve entegrasyon dokümantasyonu | enoca™ Analiz ve AR-GE Ekibi |
+| 1.1 | 2026-07-06 | Tutarlılık düzeltmeleri, güvenlik/altyapı iyileştirmeleri, workflow kataloğu güncellemeleri | enoca™ Dokümantasyon Ekibi |
+
 ---
 
 ## İçindekiler
