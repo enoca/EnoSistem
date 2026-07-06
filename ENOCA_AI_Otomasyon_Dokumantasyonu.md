@@ -35,6 +35,20 @@
 
 ## 1. Yönetici Özeti
 
+
+### 1.4 Terminoloji ve Kısaltmalar
+
+| Terim | Açıklama |
+|-------|----------|
+| enoca™ | enoca e-ticaret ekosistemi markası |
+| n8n | Açık kaynak workflow otomasyon platformu |
+| AI Agent | LLM tabanlı karar veya eylem agent'ı |
+| Webhook | HTTP tabanlı gerçek zamanlı olay bildirimi |
+| ROI | Return on Investment / Yatırım Getirisi |
+| CLV | Customer Lifetime Value / Müşteri Yaşam Boyu Değeri |
+| RFM | Recency, Frequency, Monetary |
+
+
 ### 1.1 Dokümantasyon Amacı
 
 Bu dokümantasyon, enoca™ e-ticaret ekosisteminin beş temel projesi (KEP, Connector, EnoPrice, EnoRep, EnoCart) için n8n platformu kullanılarak gerçekleştirilebilecek AI destekli otomasyon senaryolarını detaylı olarak açıklamaktadır.
@@ -250,7 +264,7 @@ rate_limits:
 | `enoca_enoprice_api` | API Key, OAuth2 Token | EnoPrice veri erişimi |
 | `enoca_enorep_api` | API Key, ML Endpoint | EnoRep model erişimi |
 | `enoca_enocart_mqtt` | Broker URL, Client ID | EnoCart IoT verisi |
-| `google_gemini` | API Key | Gemini LLM erişimi |
+| `google_gemini` | API Key | Google Gemini erişimi |
 | `trendyol_api` | API Key, Supplier ID | Trendyol entegrasyonu |
 | `hepsiburada_api` | API Key, Merchant ID | Hepsiburada entegrasyonu |
 
